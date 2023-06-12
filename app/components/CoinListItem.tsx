@@ -5,7 +5,7 @@ function CoinListItem({ chooseToken, coin }){
                                       <div className="bg-dark text-white"
                                       // onClick={chooseToken(coin)}
                 data-name={coin.name}
-                data-logouri={coin.logoURI}
+                data-logouri={coin.image}
                 data-symbol={coin.symbol}
                 key={coin.name}
                 data-decimals={coin.decimals}
@@ -14,7 +14,7 @@ function CoinListItem({ chooseToken, coin }){
                                   <div className="flex items-start gap-x-3">
                                     <img
                                       className="w-8 h-8"
-                                      src={coin.logoURI}
+                                      src={coin.image}
                                     />
                                     <div className="flex flex-col gap-y-[.5px] items-start " >
                                       <h1 className="w-full text-sm">
@@ -25,10 +25,10 @@ function CoinListItem({ chooseToken, coin }){
                                       </span>
                                     </div>
                                   </div>
-                                  <span>{!Number.isNaN(tokenBalanceBox().props.children[1]) ? Number(tokenBalanceBox().props.children[1]) >= 1000000
+                                  {/* <span>{!Number.isNaN(tokenBalanceBox().props.children[1]) ? Number(tokenBalanceBox().props.children[1]) >= 1000000
                       ? (Number(tokenBalanceBox().props.children[1])).toExponential(5)
                       : Number(tokenBalanceBox().props.children[1]): 0}
-                      </span>
+                      </span> */}
                                 </button>
                                 </div>
     );
