@@ -7,11 +7,19 @@ module.exports = {
   ],
   theme: {
     extend: {
+      animation: {
+        'spinner': 'spin 10s linear infinite',
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':
           'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
+      keyframes: {
+        spin: {
+          '0%, 100%': { transform: 'rotate(180deg)' },
+        }
+      }
     },
   },
   plugins: [],

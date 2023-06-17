@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 
 import { Popover, Transition } from "@headlessui/react";
 import {
@@ -10,112 +10,226 @@ import {
   ChevronDownIcon,
   QuestionMarkCircleIcon,
 } from "@heroicons/react/24/outline";
-import SelectToken from "../components/SelectToken";
-import Link from "next/link";
 
-type token = {
-  symbol: string;
-  logoURI: string;
-  address: string;
+import Link from "next/link";
+import ERC20Abi from "@/abis/ERC20.json";
+import PairAbi from "@/abis/Pair.json";
+import { ethers } from "ethers";
+
+type Pair = {
+  token0: { address: string; symbol: string; name: string };
+  token1: { address: string; symbol: string; name: string };
+  lp_balance: number;
+  pool_share: number;
+  reserve_splits: {
+    token0: number;
+    token1: number;
+  };
 };
 
 const Pool = () => {
-  const [hasSelected, setHasSelected] = useState(false);
-  const [mktRate, setMktRate] = useState({});
-  const [queryToken0, setQueryToken0] = useState("");
-  const [queryToken1, setQueryToken1] = useState("");
-  const [token0, setToken0] = useState({
-    symbol: "WAVAX",
-    logoURI: "./wrapped-avax.png",
-    address: "",
-  } as token);
-  const [token1, setToken1] = useState({} as token);
-  const [tokenIn, setTokenIn] = useState({
-    symbol: "WAVAX",
-    logoURI: "./wrapped-avax.png",
-    address: "",
-  });
-  const [tokenOut, setTokenOut] = useState({
-    symbol: "Select Token",
-    logoURI: "",
-    address: "",
-  });
+  const [liquidityPairs, setLiquidityPairs] = useState<Pair[]>([]);
+  const [isExpanded, setIsExpanded] = useState<{[key:number]:boolean}>({});
 
-  function changeDefaultIn(token: token) {
-    if (token.symbol === tokenOut.symbol) {
-      return;
-    }
-    setTokenIn(token);
-    if (token.address.localeCompare(tokenOut.address) < 0) {
-      setToken0(token);
-      if (hasSelected === true) {
-        setToken1(tokenOut);
+  async function getLiquidity() {
+    try {
+      const savedPairs = JSON.parse(localStorage.getItem("addedLPTokens")!);
+      const addedPairs: Pair[] = [];
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const signerAddress = await signer.getAddress();
+
+      for (let i = 0; i < Object.keys(savedPairs).length; i++) {
+        const pairContract = new ethers.Contract(
+          savedPairs[i],
+          PairAbi.abi,
+          signer
+        );
+        const token0 = await pairContract.token0();
+        const token1 = await pairContract.token1();
+
+        console.log(token0, token1)
+
+        const token0_contract = new ethers.Contract(
+          token0,
+          ERC20Abi.abi,
+          signer
+        );
+        const token1_contract = new ethers.Contract(
+          token0,
+          ERC20Abi.abi,
+          signer
+        );
+
+        const token0_symbol = await token0_contract.symbol();
+        const token0_name = await token0_contract.name();
+
+        const token1_symbol = await token1_contract.symbol();
+        const token1_name = await token1_contract.name();
+
+        const supply = Number(
+          ethers.formatEther(await pairContract.totalSupply())
+        );
+        const balance = Number(
+          ethers.formatEther(await pairContract.balanceOf(signerAddress))
+        );
+        const reserves = await pairContract.getReserves();
+        const shareOfPool = balance / supply;
+
+        addedPairs.push({
+          token0: { address: token0, symbol: token0_symbol, name: token0_name },
+          token1: { address: token1, symbol: token1_symbol, name: token1_name },
+          lp_balance: Math.floor(balance),
+          pool_share: shareOfPool * 10 ** 2,
+          reserve_splits: {
+            token0: Number(ethers.formatEther(reserves[0])) * shareOfPool,
+            token1: Number(ethers.formatEther(reserves[1])) * shareOfPool,
+          },
+        } as Pair);
       }
-      return;
-    }
-    if (token.address.localeCompare(tokenOut.address) >= 0) {
-      if (hasSelected === true) {
-        setToken0(tokenOut);
-      }
-      setToken1(token);
-      return;
+
+      setLiquidityPairs(addedPairs);
+    } catch (error) {
+      console.log(error);
     }
   }
 
-  const [tokenOrder, setTokenOrder] = useState(true);
-
-  const changeDefaultOut = (token: token) => {
-    if (token.symbol === tokenIn.symbol) {
-      return;
-    }
-    setTokenOut(token);
-    setHasSelected(true);
-    if (token.address.localeCompare(tokenIn.address) < 0) {
-      setToken0(token);
-      setToken1(tokenIn);
-      return;
-    }
-
-    if (token.address.localeCompare(tokenIn.address) >= 0) {
-      setToken0(tokenIn);
-      setToken1(token);
-      return;
-    }
-  };
+  useEffect(() => {
+    getLiquidity();
+  }, []);
+  useEffect(() => {
+  }, [isExpanded]);
 
   return (
     <div className="md:max-w-[35vw] mx-auto">
-    <div className="pt-[10vh]">
-      <div className="flex flex-col w-full px-6 pt-5 pb-7 bg-[#00AFE340] rounded-xl">
-        <div className="flex flex-col leading-none text-white">
-          <p className="font-bold p-0 m-0">Liquidity provider rewards</p> <br/> Liquidity providers earn a 0.25% fee on all
-          trades proportional to their share of the pool. Fees are added to the
-          pool, accrue in real time and can be claimed by withdrawing your
-          liquidity.
-        </div>
-        
+      <div className="pt-[10vh]">
+        <div className="flex flex-col w-full px-6 pt-5 pb-7 bg-[#00AFE340] rounded-xl">
+          <div className="flex flex-col leading-none text-white">
+            <p className="font-bold p-0 m-0">Liquidity provider rewards</p>{" "}
+            <br /> Liquidity providers earn a 0.25% fee on all trades
+            proportional to their share of the pool. Fees are added to the pool,
+            accrue in real time and can be claimed by withdrawing your
+            liquidity.
+          </div>
         </div>
       </div>
 
       <div className="flex flex-row items-center justify-between text-white pt-[3vh]">
-            <span className="text-xl">Your liquidity</span>
+        <span className="text-xl">Your liquidity</span>
         <span className="flex flex-row space-x-[.5vw]">
-            <button className="rounded-lg border-[#00DAAC90] border-[1px]  h-[4vh] px-3 py-2 text-[#00DAAC]">Create a pair</button>
-            <Link href={"liquidity/add_liquidity"} className="rounded-lg  bg-[#00DAAC90] h-[4vh] px-3 py-2 text-[#00DAAC] ">Add Liquidity</Link>
+          <button className="rounded-lg border-[#00DAAC90] border-[1px]  h-[4vh] px-3 py-2 text-[#00DAAC]">
+            Create a pair
+          </button>
+          <Link
+            href={"liquidity/add_liquidity"}
+            className="rounded-lg  bg-[#00DAAC90] h-[4vh] px-3 py-2 text-[#00DAAC] "
+          >
+            Add Liquidity
+          </Link>
         </span>
-        </div>
-        <div className="flex border-[#00DAAC90] border-[1px] md:min-h-[5vh] mt-[2vh] rounded-lg">
-        <span className="text-[#00DAAC] mx-auto place-self-center">No liquidity found.</span>
-        </div>
+      </div>
 
+      {liquidityPairs?.map((pair: Pair, index: number) => {
+        return liquidityPairs.length === 0 ? (
+          <div className="flex border-[#00DAAC90] border-[1px] md:min-h-[5vh] mt-[2vh] rounded-lg">
+            <span className="text-[#00DAAC] mx-auto place-self-center">
+              No liquidity found.
+            </span>
+          </div>
+        ) : isExpanded[index] === false || isExpanded[index] === undefined ? (
+          <span
+            className="flex flex-row justify-between items-center rounded-xl bg-[#00DAAC30] text-white p-[2vh] mt-[1vh]"
+      
+          >
+            <div className="flex flex-row">
+              <span className="flex flex-row mr-[.5vw]">
+                {/* handle state for when png exist*/}
+                <QuestionMarkCircleIcon className="w-[1vw]" />
+                <QuestionMarkCircleIcon className="w-[1vw]" />
+              </span>
+              {pair["token0"]["symbol"].toUpperCase() +
+                "/" +
+                pair["token1"]["symbol"].toUpperCase()}
+            </div>
+            <button
+                    onClick={() => {
+                      let update = isExpanded
+                      update[index] = true
+                      setIsExpanded(update)
+                    }}
+              className="flex flex-row space-x-[.5vw] items-center px-2 py-[.2vh]"
+            >
+              <p className="text-[#00DAAC] font-medium">Manage</p>
+              <ChevronDownIcon color="white" width="1vw" height="1vw" />
+            </button>
+          </span>
+        ) : (
+          <span className="flex flex-col rounded-xl bg-[#00DAAC30] text-white p-[2vh] mt-[1vh]">
+            <span
+              className="flex flex-row justify-between items-center"
+            >
+              <div className="flex flex-row">
+                <span className="flex flex-row mr-[.5vw]">
+                  {/* handle state for when png exist*/}
+                  <QuestionMarkCircleIcon className="w-[1vw]" />
+                  <QuestionMarkCircleIcon className="w-[1vw]" />
+                </span>
+                {pair["token0"]["symbol"].toUpperCase() +
+                  "/" +
+                  pair["token1"]["symbol"].toUpperCase()}
+              </div>
+              <button
+                   onClick={() => {
+                    let update = isExpanded
+                    update[index] = !update[index]
+                    console.log(update)
+                    setIsExpanded(update)
+                  }}
+                className="flex flex-row space-x-[.5vw] items-center px-2 py-[.2vh]"
+              >
+                <p className="text-[#00DAAC] font-medium">Manage</p>
+                <ChevronDownIcon color="white" width="1vw" height="1vw" />
+              </button>
+              </span>
+              <span className="flex flex-row justify-between items-center">
+                  <p>Your pool tokens</p>
+                <p>{pair["lp_balance"]}</p>
+             
+              </span>
 
-        
+              <span className="flex flex-row justify-between items-center">
+                <p>Your pool share:</p>
+                <p>{pair["pool_share"]}%</p>
+              </span>
+
+              <span className="flex flex-row justify-between items-center">
+                <p>Pooled {pair["token0"]["symbol"]}:</p>
+                <p>{pair["reserve_splits"]["token0"]}</p>
+              </span>
+
+              <span className="flex flex-row justify-between items-center">
+                <p>Pooled {pair["token1"]["symbol"]}:</p>
+                <p>{pair["reserve_splits"]["token1"]}</p>
+              </span>
+              <span className="flex flex-row mt-[1vh] justify-between">
+           <button className="py-[1vh] w-[49%] bg-[#00DAAC90] rounded-lg">Add</button>
+           <button className="py-[1vh] w-[49%] bg-[#00DAAC90] rounded-lg">Remove</button>
+           </span>
+          </span>
+        );
+      })}
+
+      <span className="text-white flex justify-center pt-4 ">
+        {" "}
+        Don't see a pool you joined?
+        <Link
+          className="text-[#00DAAC] ml-[.3rem]"
+          href="/liquidity/import_liquidity"
+        >
+          Import it
+        </Link>{" "}
+      </span>
     </div>
-
-
-
-
-
   );
 };
 export default Pool;
