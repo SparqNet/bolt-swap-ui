@@ -1,3 +1,33 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+input[type=range] {
+    -webkit-appearance: none; /* Remove default styling for WebKit browsers */
+    width: 100%;
+    height: .5vh;
+    border-radius: 5px;
+    background-color: white;
+    outline: none; /* Remove the default focus outline */
+   
+  }
+  
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Remove default styling for WebKit browsers */
+    appearance: none;
+    width: 2vw;
+    height: 2vw;
+    border-radius: 50%;
+    background-color:white;
+    cursor: pointer;
+  }
+  
+  input[type=range]::-moz-range-thumb {
+    appearance: none; /* Remove default styling for Mozilla Firefox */
+    width: 2vw;
+    height: 2vw;
+    border-radius: 50%;
+    background-color: white;
+    cursor: pointer;
+  }

@@ -48,7 +48,6 @@ const Pool = () => {
         const token0 = await pairContract.token0();
         const token1 = await pairContract.token1();
 
-        console.log(token0, token1)
 
         const token0_contract = new ethers.Contract(
           token0,
@@ -212,12 +211,15 @@ const Pool = () => {
                 <p>{pair["reserve_splits"]["token1"]}</p>
               </span>
               <span className="flex flex-row mt-[1vh] justify-between">
-           <button className="py-[1vh] w-[49%] bg-[#00DAAC90] rounded-lg">Add</button>
-           <button className="py-[1vh] w-[49%] bg-[#00DAAC90] rounded-lg">Remove</button>
+           <Link href="/liquidity/add_liquidity"  className="py-[1vh] w-[49%] bg-[#00DAAC90] rounded-lg flex flex-row justify-center">Add</Link>
+           <Link href={'/liquidity/remove_liquidity/' + pair["token0"]["address"] + "/" +  pair["token1"]["address"] } className="py-[1vh] w-[49%] bg-[#00DAAC90] rounded-lg flex flex-row justify-center">Remove</Link>
            </span>
           </span>
         );
       })}
+
+
+
 
       <span className="text-white flex justify-center pt-4 ">
         {" "}
