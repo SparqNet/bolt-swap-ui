@@ -3,7 +3,7 @@ import {
   XMarkIcon
 } from "@heroicons/react/24/outline";
 
-export const SuccessToast = ({successDisplay, setSuccessDisplay, hash}) => {
+export const SuccessToast = ({successDisplay, setSuccessDisplay, hash}:any) => {
   return (
     <div className="bg-black py-3 px-4 rounded-xl flex gap-x-5">
       <div>

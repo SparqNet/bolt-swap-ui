@@ -32,7 +32,7 @@ interface Coin {
   image: string;
 }
 
-export default function addLiquidity() {
+export default function ImportLiquidity() {
   const [isSelected, setSelected] = useState(false);
   const [token0, setToken0] = useState({
     name: "Sparq",

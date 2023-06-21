@@ -50,7 +50,7 @@ useEffect(() => {
   return (
     <html lang="en">
       <body className={inter.className}>
-      <div className="bg-[url('/background.svg')] bg-cover w-full h-screen">
+      <div className="bg-[url('/background.svg')] bg-cover min-h-screen h-full">
         <div className="py-[2%] px-[4%]" id="main-container">
             <span className="flex flex-row justify-between items-center h-[5%]">
               <span className="flex flex-row text-white">

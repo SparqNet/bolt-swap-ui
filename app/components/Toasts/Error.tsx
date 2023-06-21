@@ -1,6 +1,6 @@
 import { ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
-export const ErrorToast = ({errorDisplay, setErrorDisplay, hash}) => {
+export const ErrorToast = ({errorDisplay, setErrorDisplay, hash}: any) => {
   return (
     <div className="bg-black py-3 px-4 rounded-xl flex gap-x-5">
       <div>
