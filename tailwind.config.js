@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       animation: {
-        'spinner': 'spin 10s linear infinite',
+        'spinner': 'spin 3s linear infinite',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
@@ -17,7 +17,7 @@ module.exports = {
       },
       keyframes: {
         spin: {
-          '0%, 100%': { transform: 'rotate(180deg)' },
+          '0%, 100%': { transform: 'rotate(18deg)' },
         }
       }
     },

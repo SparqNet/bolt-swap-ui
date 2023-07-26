@@ -22,7 +22,7 @@ export default function SelectToken(props:any) {
   const [coinsForListing, setCoinsForListing] = useState([{
     name: "Wrapped Ether",
     address: "",
-    symbol: "WAVAX",
+    symbol: "WSPARQ",
     logoURI: "./wrapped-avax.png",
     decimals: 18
 },

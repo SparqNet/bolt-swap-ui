@@ -25,6 +25,7 @@ import { BigNumberish, ethers } from "ethers";
 import Link from "next/link";
 import React, { Fragment, use, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useStore } from "@/app/useStore";
 
 interface Coin {
   name: string;
@@ -47,8 +48,13 @@ function RemoveLiquidity() {
     address: "",
     image: "/logo.svg",
   } as Coin);
+  const [Slippage, Network, Deadline] = useStore((state: any) => [
+    state.Slippage,
+    state.Network,
+    state.Deadline,
+  ]);
+
   const [token0Input, setToken0Input] = useState(0);
-  const [slippage, setSlippage] = useState(0.02);
   const [display, setDisplay] = useState("simple");
   const [removePercent, setRemovePercentage] = useState(50);
   const [expectedOut, setExpectedOut] = useState(0);
@@ -58,7 +64,7 @@ function RemoveLiquidity() {
   const [token0Balance, setToken0Balance] = useState(0);
   const [token1Balance, setToken1Balance] = useState(0);
   const [token1Input, setToken1Input] = useState(0);
-  const [needsApproval, setNeedsApproval] = useState(true);
+  const [needsApproval, setNeedsApproval] = useState(0);
   const [lpHoldings, setLPHoldings] = useState(0);
 
   const checkApproval = async () => {
@@ -88,25 +94,27 @@ function RemoveLiquidity() {
         RouterAddress
       );
 
+      console.log(
+        Number(ethers.formatEther(pairTokenAllowance)) >=
+        (removePercent / 100) * lpHoldings
+      )
+
+
       if (
         Number(ethers.formatEther(pairTokenAllowance)) <
         (removePercent / 100) * lpHoldings
       ) {
-        setNeedsApproval(true);
-      } 
-      if (  Number(ethers.formatEther(pairTokenAllowance)) ===
-      (removePercent / 100) * lpHoldings) {
-        setNeedsApproval(false);
+        setNeedsApproval(1);
       }
+   
 
       if (
-        Number(ethers.formatEther(pairTokenAllowance)) >
+        Number(ethers.formatEther(pairTokenAllowance)) >=
         (removePercent / 100) * lpHoldings
       ) {
-        setNeedsApproval(false);
-      } 
-
-
+        setNeedsApproval(0);
+      }
+   
     } catch (error) {
       console.log(error);
     }
@@ -124,80 +132,99 @@ function RemoveLiquidity() {
         signer
       );
 
-      const deadline = Number(Date.now() + 5 * 60 * 1000);
+      const deadline = Number(Date.now() + Deadline * 60 * 1000);
 
       const removalAmount0 =
-        (removePercent / 100) * token0Balance - (
-        (removePercent / 100) * token0Balance * slippage);
+        (removePercent / 100) * token0Balance -
+        (removePercent / 100) * token0Balance * Slippage;
       const removalAmount1 =
-      (removePercent / 100) * token1Balance - (
-        (removePercent / 100) * token1Balance * slippage);
+        (removePercent / 100) * token1Balance -
+        (removePercent / 100) * token1Balance * Slippage;
 
-        let formattedNumber = removalAmount0.toString().replace('.', '')
+      let formattedNumber = removalAmount0.toString().replace(".", "");
 
-        const integerLength = Math.floor(removalAmount0).toString().length
-        const decimalLength = (removalAmount0 - Math.floor(removalAmount0)).toFixed(3).replace('.', '').replace(/^0+/, '').length
-         
-        const decimalValue = Number((removalAmount0 - Math.floor(removalAmount0)).toFixed(3));
+      const integerLength = Math.floor(removalAmount0).toString().length;
+      const decimalLength = (removalAmount0 - Math.floor(removalAmount0))
+        .toFixed(3)
+        .replace(".", "")
+        .replace(/^0+/, "").length;
 
+      const decimalValue = Number(
+        (removalAmount0 - Math.floor(removalAmount0)).toFixed(3)
+      );
 
-        formattedNumber = integerLength > 1 && decimalValue !== 0 ? formattedNumber.padEnd(
-            formattedNumber.length + (18 - (formattedNumber.length - integerLength)),
-            "0"
-          )
-        : decimalLength === 1 || decimalValue === 0 ? formattedNumber.padEnd(
-          formattedNumber.length + (18),
-          "0") :
-        
-        
-        formattedNumber.padEnd(
-          formattedNumber.length + (18 - decimalLength),
-          "0"
-        );
-        formattedNumber =
-          formattedNumber.slice(0, -18) + formattedNumber.slice(-18);
+      formattedNumber =
+        integerLength > 1 && decimalValue !== 0
+          ? formattedNumber.padEnd(
+              formattedNumber.length +
+                (18 - (formattedNumber.length - integerLength)),
+              "0"
+            )
+          : decimalLength === 1 || decimalValue === 0
+          ? formattedNumber.padEnd(formattedNumber.length + 18, "0")
+          : formattedNumber.padEnd(
+              formattedNumber.length + (18 - decimalLength),
+              "0"
+            );
+      formattedNumber =
+        formattedNumber.slice(0, -18) + formattedNumber.slice(-18);
 
-          let formattedNumber1 = removalAmount1.toString().replace('.', '')
+      let formattedNumber1 = removalAmount1.toString().replace(".", "");
 
-          const integerLength1 = Math.floor(removalAmount1).toString().length
-          const decimalLength1 = (removalAmount1 - Math.floor(removalAmount1)).toFixed(3).replace('.', '').replace(/^0+/, '').length
-         
-          const decimalValue1 = Number((removalAmount1 - Math.floor(removalAmount1)).toFixed(3))
-          
-          formattedNumber1 = integerLength1 > 1 && decimalValue1 !== 0 ? formattedNumber1.padEnd(
-            formattedNumber1.length + (18 - (formattedNumber1.length - integerLength1)),
-            "0"
-          ) : decimalLength1 === 1 || decimalValue1 === 0 ? formattedNumber1.padEnd(
-            formattedNumber1.length + (18),
-            "0") :
-          formattedNumber1.padEnd(
-            formattedNumber1.length + (18 - decimalLength1),
-            "0"
-          );
-          formattedNumber1 =
-            formattedNumber1.slice(0, -18) + formattedNumber1.slice(-18);
+      const integerLength1 = Math.floor(removalAmount1).toString().length;
+      const decimalLength1 = (removalAmount1 - Math.floor(removalAmount1))
+        .toFixed(3)
+        .replace(".", "")
+        .replace(/^0+/, "").length;
 
-          const liquidityRemoved = (removePercent / 100) * lpHoldings
+      const decimalValue1 = Number(
+        (removalAmount1 - Math.floor(removalAmount1)).toFixed(3)
+      );
 
-          let formattedNumber2 = liquidityRemoved.toString().replace('.', '')
+      formattedNumber1 =
+        integerLength1 > 1 && decimalValue1 !== 0
+          ? formattedNumber1.padEnd(
+              formattedNumber1.length +
+                (18 - (formattedNumber1.length - integerLength1)),
+              "0"
+            )
+          : decimalLength1 === 1 || decimalValue1 === 0
+          ? formattedNumber1.padEnd(formattedNumber1.length + 18, "0")
+          : formattedNumber1.padEnd(
+              formattedNumber1.length + (18 - decimalLength1),
+              "0"
+            );
+      formattedNumber1 =
+        formattedNumber1.slice(0, -18) + formattedNumber1.slice(-18);
 
-          const integerLength2 = Math.floor(liquidityRemoved).toString().length
-          const decimalLength2 = (liquidityRemoved - Math.floor(liquidityRemoved)).toFixed(3).replace('.', '').replace(/^0+/, '').length
-          const decimalValue2 = Number((liquidityRemoved - Math.floor(liquidityRemoved)).toFixed(3))
+      const liquidityRemoved = (removePercent / 100) * lpHoldings;
 
-          formattedNumber2 = integerLength2 > 1 && decimalValue2 !== 0 ? formattedNumber2.padEnd(
-            formattedNumber2.length + (18 - (formattedNumber2.length - integerLength2)),
-            "0"
-          ) : decimalLength2 === 1 || decimalValue2 === 0 ? formattedNumber2.padEnd(
-            formattedNumber2.length + (18),
-            "0") :
-          formattedNumber2.padEnd(
-            formattedNumber2.length + (18 - decimalLength2),
-            "0"
-          );
-          formattedNumber2 =
-            formattedNumber2.slice(0, -18) + formattedNumber2.slice(-18);
+      let formattedNumber2 = liquidityRemoved.toString().replace(".", "");
 
+      const integerLength2 = Math.floor(liquidityRemoved).toString().length;
+      const decimalLength2 = (liquidityRemoved - Math.floor(liquidityRemoved))
+        .toFixed(3)
+        .replace(".", "")
+        .replace(/^0+/, "").length;
+      const decimalValue2 = Number(
+        (liquidityRemoved - Math.floor(liquidityRemoved)).toFixed(3)
+      );
+
+      formattedNumber2 =
+        integerLength2 > 1 && decimalValue2 !== 0
+          ? formattedNumber2.padEnd(
+              formattedNumber2.length +
+                (18 - (formattedNumber2.length - integerLength2)),
+              "0"
+            )
+          : decimalLength2 === 1 || decimalValue2 === 0
+          ? formattedNumber2.padEnd(formattedNumber2.length + 18, "0")
+          : formattedNumber2.padEnd(
+              formattedNumber2.length + (18 - decimalLength2),
+              "0"
+            );
+      formattedNumber2 =
+        formattedNumber2.slice(0, -18) + formattedNumber2.slice(-18);
 
       await RouterContract.removeLiquidity(
         token0.address,
@@ -255,19 +282,46 @@ function RemoveLiquidity() {
         PairAbi.abi,
         signer
       );
-      let formattedNumber = ((removePercent / 100) * lpHoldings).toString();
-  
-      formattedNumber = formattedNumber.padEnd(
-        formattedNumber.length + (18),
-        "0"
+
+      const removalAmount1 = (removePercent / 100) * lpHoldings;
+
+      let formattedNumber1 = removalAmount1.toString().replace(".", "");
+
+      const integerLength1 = Math.floor(removalAmount1).toString().length;
+      const decimalLength1 = (removalAmount1 - Math.floor(removalAmount1))
+        .toFixed(3)
+        .replace(".", "")
+        .replace(/^0+/, "").length;
+
+      const decimalValue1 = Number(
+        (removalAmount1 - Math.floor(removalAmount1)).toFixed(3)
       );
-      formattedNumber =
-        formattedNumber.slice(0, -18) + formattedNumber.slice(-18);
-      await pairContract
-        .approve(RouterAddress, ethers.toBigInt(formattedNumber))
-        .then(() => checkApproval(), (error:any) => {
-          console.log(error);
-        });
+
+      formattedNumber1 =
+        integerLength1 > 1 && decimalValue1 !== 0
+          ? formattedNumber1.padEnd(
+              formattedNumber1.length +
+                (18 - (formattedNumber1.length - integerLength1)),
+              "0"
+            )
+          : decimalLength1 === 1 || decimalValue1 === 0
+          ? formattedNumber1.padEnd(formattedNumber1.length + 18, "0")
+          : formattedNumber1.padEnd(
+              formattedNumber1.length + (18 - decimalLength1),
+              "0"
+            );
+      formattedNumber1 =
+        formattedNumber1.slice(0, -18) + formattedNumber1.slice(-18);
+     const approveTx = await pairContract
+        .approve(RouterAddress, ethers.toBigInt(formattedNumber1))
+        .catch(
+          (error: any) => {
+            console.log(error);
+          }
+        );
+
+        await provider.waitForTransaction(approveTx.hash)
+        await checkApproval()
     } catch (error) {
       console.log(error);
     }
@@ -364,8 +418,6 @@ function RemoveLiquidity() {
       console.log(error);
     }
   };
-
-
 
   useEffect(() => {
     const calculateStats0 = async () => {
@@ -467,18 +519,18 @@ function RemoveLiquidity() {
 
   const path = usePathname().split("/");
 
+
+
   useEffect(() => {
     const token0Pth = path[3];
     const token1Pth = path[4];
     getBalance(token0Pth, token1Pth);
   }, [token0, token1]);
 
-
   useEffect(() => {
-    if(token0.address !== "" && token1.address !== ""){
+    if (token0.address !== "" && token1.address !== "") {
       checkApproval();
     }
-    
   }, [needsApproval, token0.address, token1.address, removePercent]);
 
   return (
@@ -525,35 +577,32 @@ function RemoveLiquidity() {
             <div className="flex flex-row justify-between pt-[2vh]">
               <button
                 onClick={() => {
-                  setRemovePercentage(25)
+                  setRemovePercentage(25);
                 }}
                 className="rounded-lg  bg-[#00DAAC40] h-[4vh] w-[] px-3 py-2 text-[#00DAAC] border border-solid-[1px] border-[#00DAAC]"
               >
                 25%
               </button>
               <button
-                     onClick={() => {
-                      setRemovePercentage(50)
-            
-                    }}
+                onClick={() => {
+                  setRemovePercentage(50);
+                }}
                 className="rounded-lg  bg-[#00DAAC40] h-[4vh] w-[] px-3 py-2 text-[#00DAAC] border border-solid-[1px] border-[#00DAAC]"
               >
                 50%
               </button>
               <button
-                    onClick={() => {
-                      setRemovePercentage(75)
-                 
-                    }}
+                onClick={() => {
+                  setRemovePercentage(75);
+                }}
                 className="rounded-lg  bg-[#00DAAC40] h-[4vh] w-[] px-3 py-2 text-[#00DAAC] border border-solid-[1px] border-[#00DAAC]"
               >
                 75%
               </button>
               <button
-                    onClick={() => {
-                      setRemovePercentage(100)
-                
-                    }}
+                onClick={() => {
+                  setRemovePercentage(100);
+                }}
                 className="rounded-lg  bg-[#00DAAC40] h-[4vh] w-[] px-3 py-2 text-[#00DAAC] border border-solid-[1px] border-[#00DAAC]"
               >
                 Max
@@ -615,9 +664,10 @@ function RemoveLiquidity() {
           </div>
           <span className="flex flex-row mt-[2vh] justify-between mb-[2vh] mx-[3%]">
             <button
-            onClick={() => approveTokens()}
+            key={needsApproval}
+              onClick={() => approveTokens()}
               className={
-                needsApproval
+                needsApproval === 1
                   ? "py-[2vh] w-[49%] bg-[#00DAAC90] rounded-xl flex flex-row justify-center items-center text-white"
                   : "py-[2vh] w-[49%] bg-gray-600 rounded-xl flex flex-row justify-center items-center text-white cursor-not-allowed"
               }
@@ -625,10 +675,10 @@ function RemoveLiquidity() {
               Approve
             </button>
             <button
-              disabled={needsApproval}
+              disabled={needsApproval === 1}
               onClick={() => removeLiquidity()}
               className={
-                !needsApproval
+                needsApproval === 0
                   ? "py-[2vh] w-[49%] bg-[#00DAAC90] rounded-xl flex flex-row justify-center items-center text-white"
                   : "py-[2vh] w-[49%] bg-gray-600 rounded-xl flex flex-row justify-center items-center text-white cursor-not-allowed"
               }

@@ -4,10 +4,14 @@ import CoinListButton from "@/app/components/Buttons/CoinListButton";
 import CoinListItem from "@/app/components/CoinListItem";
 import ERC20 from "@/abis/ERC20.json";
 import RouterAbi from "@/abis/Router.json";
+import PairAbi from "@/abis/Pair.json";
+import FactoryAbi from "@/abis/Factory.json"
 import {
   Gold,
   RouterAddress,
   Silver,
+  WSPARQ,
+  PAIR_LP,
   factory_address,
 } from "@/utils/constants";
 import { Dialog, Transition } from "@headlessui/react";
@@ -23,6 +27,7 @@ import {
 import { ethers } from "ethers";
 import Link from "next/link";
 import React, { Fragment, use, useEffect, useState } from "react";
+import { useStore } from "../useStore";
 
 interface Coin {
   name: string;
@@ -32,6 +37,25 @@ interface Coin {
 }
 
 export default function Swap() {
+  const [
+    Slippage,
+    Network,
+    Connection,
+    Deadline,
+    updateNetwork,
+    updateSlippage,
+    updateConnection,
+    updateDeadline,
+  ] = useStore((state: any) => [
+    state.Slippage,
+    state.Network,
+    state.Connection,
+    state.Deadline,
+    state.updateNetwork,
+    state.updateSlippage,
+    state.updateConnection,
+    state.updateDeadline,
+  ]);
   const [isSelected, setSelected] = useState(false);
   const [token0, setToken0] = useState({
     name: "Sparq",
@@ -58,6 +82,12 @@ export default function Swap() {
       symbol: "SLV",
       address: Silver,
       image: "/silver.png",
+    } as Coin,
+    {
+      name: "Wrapped Sparq",
+      symbol: "WSPRQ",
+      address: WSPARQ,
+      image: "/logo.svg",
     } as Coin,
   ]);
   const [inputVal, setInputVal] = useState("");
@@ -109,58 +139,67 @@ export default function Swap() {
     }
   };
 
-  const supplyLiquidity = async () => {
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const signerAddress = await signer.getAddress();
+  const swap = async () => {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const signerAddress = await signer.getAddress();
 
-      const factoryContract = new ethers.Contract(
-        RouterAddress,
-        RouterAbi.abi,
-        signer
-      );
-      const LP_Token = await factoryContract
-        .addLiquidity(
-          token0.address,
-          token1.address,
-          ethers.toBigInt(token0Input),
-          ethers.toBigInt(token1Input),
-          null,
-          null,
-          signerAddress,
-          null
-        )
-        .then(
-          // wasAdded is a boolean. Like any RPC method, an error may be thrown.
-          // async() => {const wasAdded = await ethereum.request({
-          //   method: 'wallet_watchAsset',
-          //   params: {
-          //     type: 'ERC20', // Initially only supports ERC20, but eventually more!
-          //     options: {
-          //       address: LP_Token.address, // The address that the token is at.
-          //       symbol: tokenSymbol, // A ticker symbol or shorthand, up to 5 chars.
-          //       decimals: tokenDecimals, // The number of decimals in the token
-          //       image: tokenImage, // A string url of the token logo
-          //     },
-          //   },
-          // });
+    const FactoryContract = new ethers.Contract(
+      factory_address,
+      FactoryAbi.abi,
+      signer
+    )
 
-          // if (wasAdded) {
-          //   console.log('Thanks for your interest!');
-          // } else {
-          //   console.log('Your loss!');
-          // }
 
-          // }
+    const RouterContract = new ethers.Contract(
+      RouterAddress,
+      RouterAbi.abi,
+      signer
+    );
 
-          null,
-          (error) => console.log(error)
-        );
-      console.log(LP_Token);
-    } catch (error) {
-      console.log(error);
+    const block = await provider.getBlock("latest");
+    let deadline;
+
+    if (block) {
+      deadline = block.timestamp + Deadline * 60;
+      // Further processing using the deadline
+    } else {
+      // Handle the case when the block is null
+      console.error("Error: Block is null");
     }
+
+    const doesLPTokenExist = await FactoryContract.getPair(
+      token0.address,
+      token1.address
+    );
+    const PairContract = new ethers.Contract(
+      await doesLPTokenExist,
+      PairAbi.abi,
+      signer
+    )
+    console.log(ethers.formatEther((await PairContract.getReserves())[0].toString()))
+    const AmountOut = await RouterContract.getAmountOut(
+      token0Input,
+      (await PairContract.getReserves())[0],
+      (await PairContract.getReserves())[1]
+    );
+
+   console.log(await RouterContract.getAmountOut(
+      token0Input,
+      (await PairContract.getReserves())[0],
+      (await PairContract.getReserves())[1]
+    ));
+
+    
+
+    const swapT2T = await RouterContract.swapExactTokensForTokens(
+      ethers.toBigInt(token0Input),
+      AmountOut,
+      [token1.address, token0.address],
+      signerAddress,
+      deadline
+    ).then(null, (error) => console.log(error));
+    console.log(swapT2T);
   };
 
   const approveTokens = async () => {
@@ -381,10 +420,10 @@ export default function Swap() {
         </Dialog>
       </Transition>
 
-      <div className="flex flex-col box-border md:max-w-[35vw] mx-auto bg-[#00AFE340] rounded-3xl mt-[3vh]">
+      <div className="flex flex-col box-border md:max-w-[27vw] mx-auto bg-[#00AFE340] rounded-3xl mt-[10vh]">
         <div className="border-[1px] border-[#86C7DB25] rounded-xl mx-[3%] mt-[5%] p-[3%] text-white">
           <div className="flex flex-row justify-between">
-            <span className="select-none">From</span>
+            <span className="select-none text-sm">From</span>
             <span key={token0Balance}>Balance:{token0Balance}</span>
           </div>
 
@@ -393,7 +432,7 @@ export default function Swap() {
               onChange={(e) => setToken0Input(Number(e.target.value))}
               id="token0"
               type="number"
-              className="text-3xl bg-transparent border-transparent w-1/2 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="text-2xl bg-transparent border-transparent w-1/2 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="0.0"
             />
             <button
@@ -401,59 +440,32 @@ export default function Swap() {
               className="flex flex-row space-x-[.5vw] items-center bg-[#00DAAC30] rounded-xl px-2 py-[.2vh]"
             >
               <img className="w-[1vw]" src={token0.image} />
-              <p className="text-2xl font-medium">
-                {token0.name.toUpperCase()}
-              </p>
+              <p className="text-xl font-medium">{token0.name.toUpperCase()}</p>
               <ChevronDownIcon color="white" width="1vw" height="1vw" />
             </button>
           </div>
         </div>
         <span
-  className="mx-auto text-white text-2xl my-[2vh] p-2 border border-[1px] border-[#86C7DB25] bg-[#00DAAC30] rounded-lg cursor-pointer box-border"
-  onClick={() => {
-    if (isSelected) {
-      const temp = token0;
-      setToken0(token1);
-      setToken1(temp);
-      if (direction === "down") {
-        setDirection("up");
-      } else {
-        setDirection("down");
-      }
-    }
-  }}
->
-  <ArrowSmallDownIcon color="white" className="w-4 h-4" />
-</span>
-{/* 
-<Transition
-  enter="transition-all transform duration-300"
-  enterFrom="opacity-100 rotate-0 scale-y-100"
-  enterTo="opacity-100 rotate-180 scale-y-100"
-  leave="transition-all transform duration-[10ms]"
-  leaveFrom="opacity-0 rotate-180 scale-y-100"
-  leaveTo="opacity-0 rotate-180 scale-y-100"
-  show={direction === "up"}
-  className="mx-auto text-white text-2xl my-[2vh] p-2 border border-[1px] border-[#86C7DB25] bg-[#00DAAC30] rounded-lg cursor-pointer box-border"
-  onClick={() => {
-    if (isSelected) {
-      const temp = token0;
-      setToken0(token1);
-      setToken1(temp);
-      if (direction === "down") {
-        setDirection("up");
-      } else {
-        setDirection("down");
-      }
-    }
-  }}
->
-  <ArrowSmallDownIcon color="white" className="w-4 h-4" />
-</Transition> */}
+          className="mx-auto text-white text-xl my-[1vh] p-2 border border-[1px] border-[#86C7DB25] bg-[#00DAAC30] rounded-lg cursor-pointer box-border"
+          onClick={() => {
+            if (isSelected) {
+              const temp = token0;
+              setToken0(token1);
+              setToken1(temp);
+              if (direction === "down") {
+                setDirection("up");
+              } else {
+                setDirection("down");
+              }
+            }
+          }}
+        >
+          <ArrowSmallDownIcon color="white" className="w-4 h-4" />
+        </span>
 
         <div className="border-[1px] border-[#86C7DB25] rounded-xl mx-[3%] p-[3%] text-white ">
           <div className="flex flex-row justify-between">
-            <span className="select-none">To</span>
+            <span className="select-none text-sm">To</span>
             <span className="select-none">
               {" "}
               {isSelected === true ? `Balance:${token1Balance}` : "-"}
@@ -466,7 +478,7 @@ export default function Swap() {
                 onChange={(e) => setToken1Input(Number(e.target.value))}
                 id="token1"
                 type="number"
-                className="text-3xl bg-transparent border-transparent w-1/2 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="text-2xl bg-transparent border-transparent w-1/2 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.0"
               />
               <button
@@ -474,7 +486,7 @@ export default function Swap() {
                 className="flex flex-row space-x-[.5vw] items-center bg-[#00DAAC30] rounded-xl px-2 py-[.2vh]"
               >
                 <img className="w-[1vw]" src={token1.image} />
-                <p className="text-2xl font-medium">
+                <p className="text-xl font-medium">
                   {token1.name.toUpperCase()}
                 </p>
                 <ChevronDownIcon color="white" width="1vw" height="1vw" />
@@ -486,14 +498,14 @@ export default function Swap() {
                 disabled={true}
                 id="token1"
                 type="number"
-                className="text-3xl bg-transparent border-transparent w-1/2 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="text-2xl bg-transparent border-transparent w-1/2 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.0"
               />
               <button
                 onClick={() => setIsOpen({ show: true, tokenNum: 1 })}
                 className="flex flex-row space-x-[.5vw] items-center bg-[#00DAAC30] rounded-xl px-2 py-[.2vh]"
               >
-                <p className="text-2xl font-normal">Select Token</p>
+                <p className="text-xl font-normal">Select Token</p>
                 <ChevronDownIcon color="white" width="1vw" height="1vw" />
               </button>
             </div>
@@ -523,31 +535,35 @@ export default function Swap() {
             </div>
           </div>
         ) : null}
+        <span className="flex flex-row justify-between mx-[3%] pt-[1vh] px-[3%] text-white">
+          <span>Slippage Tolerance</span>
+          <span>{Slippage}%</span>
+        </span>
         {isSelected === false ? (
-          <button className="mt-[2vh] mx-[3%] rounded-xl bg-[#888D9B] py-[2vh] mb-[2vh] font-medium text-[#3E4148]">
+          <button className="mt-[2vh] mx-[3%] rounded-xl bg-[#888D9B] py-[2vh] mb-[2vh] font-medium text-lg text-[#3E4148]">
             {" "}
             Invalid pair
           </button>
         ) : token0Input === 0 || token1Input === 0 ? (
-          <button className="mt-[2vh] mx-[3%] rounded-xl bg-[#888D9B] py-[2vh] mb-[2vh] font-medium text-[#3E4148]">
+          <button className="mt-[2vh] mx-[3%] rounded-xl bg-[#888D9B] py-[2vh] mb-[2vh] font-medium text-lg text-[#3E4148]">
             {" "}
             Enter an amount
           </button>
         ) : needsApproval === true ? (
           <button
             onClick={() => approveTokens()}
-            className="mt-[2vh] mx-[3%] rounded-xl bg-[#00DAAC30] py-[2vh] mb-[2vh] font-medium text-[#00DAAC]"
+            className="mt-[2vh] mx-[3%] rounded-xl bg-[#00DAAC30] py-[2vh] mb-[2vh] font-medium text-lg  text-[#00DAAC]"
           >
             {" "}
             Approve{" "}
           </button>
         ) : (
           <button
-            onClick={() => supplyLiquidity()}
+            onClick={() => swap()}
             className="mt-[2vh] mx-[3%] rounded-xl  bg-[#00DAAC30] py-[2vh] mb-[2vh] font-medium text-[#00DAAC] shadow shadow-lg"
           >
             {" "}
-            Supply liquidity
+            Swap
           </button>
         )}
       </div>

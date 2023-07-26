@@ -15,6 +15,7 @@ import Link from "next/link";
 import ERC20Abi from "@/abis/ERC20.json";
 import PairAbi from "@/abis/Pair.json";
 import { ethers } from "ethers";
+import { useStore } from "../useStore";
 
 type Pair = {
   token0: { address: string; symbol: string; name: string };
@@ -30,6 +31,10 @@ type Pair = {
 const Pool = () => {
   const [liquidityPairs, setLiquidityPairs] = useState<Pair[]>([]);
   const [isExpanded, setIsExpanded] = useState<{ [key: number]: boolean }>({});
+  const [Slippage, Network, Deadline] = useStore((state: any) => [
+    state.Slippage, state.Network,  state.Deadline
+  ]);
+  
 
    const getLiquidity = async () => {
     try {
@@ -54,7 +59,7 @@ const Pool = () => {
           signer
         );
         const token1_contract = new ethers.Contract(
-          token0,
+          token1,
           ERC20Abi.abi,
           signer
         );
@@ -94,11 +99,11 @@ const Pool = () => {
 
   useEffect(() => {
     const savedPairs = JSON.parse(localStorage.getItem("addedLPTokens")!);
-    if (savedPairs !== null) {
+    if (savedPairs !== null && Network.name !== "") {
       getLiquidity();
     }
     
-  }, []);
+  }, [Network.name]);
 
   return (
     <div className="md:max-w-[35vw] mx-auto">

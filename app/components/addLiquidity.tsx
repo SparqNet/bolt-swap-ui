@@ -27,7 +27,7 @@ export default function addLiquidity() {
         <div className="flex flex-row justify-between py-[.5vh]">
           <span className="text-3xl">0.0</span>
           <span className="flex flex-row space-x-[.5vw] items-center">
-            <p>WAVAX</p>
+            <p>WSPARQ</p>
             <p>Wrapped AVAX</p>
           </span>
         </div>
