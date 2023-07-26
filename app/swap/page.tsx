@@ -190,10 +190,13 @@ export default function Swap() {
       (await PairContract.getReserves())[1]
     ));
 
-    
+
+
+
+
 
     const swapT2T = await RouterContract.swapExactTokensForTokens(
-      ethers.toBigInt(token0Input),
+      ethers.toWei(token0Input),
       AmountOut,
       [token1.address, token0.address],
       signerAddress,

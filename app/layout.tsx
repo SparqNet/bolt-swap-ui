@@ -112,11 +112,11 @@ export default function RootLayout({
       if (window.ethereum) {
         const provider = new ethers.BrowserProvider(window.ethereum);
         const network = await provider.getNetwork();
-        if (Number(network.chainId) !== 43113) {
+        if (Number(network.chainId) !== 808080) {
           setNetwork("Wrong Network");
         } else {
-          setNetwork("Avalanche Fuji");
-          updateNetwork("Avalanche Fuji");
+          setNetwork("Orbiter");
+          updateNetwork("Orbiter");
         }
 
         const currentNetwork = window.ethereum;
@@ -204,7 +204,7 @@ export default function RootLayout({
                     </p>
                     <p className="rounded-lg bg-[#00DAAC40] h-[4vh] px-3 py-2 text-[#00DAAC] font-bold">
                       {" "}
-                      {Number(wallet?.nativeBalance).toFixed(2)} AVAX
+                      {Number(wallet?.nativeBalance).toFixed(2)} SPARQ
                     </p>
                     <button
                       onClick={() => copyToClipboard(wallet.address)}

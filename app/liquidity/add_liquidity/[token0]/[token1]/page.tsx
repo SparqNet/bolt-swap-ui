@@ -102,6 +102,8 @@ export default function AddLiquidity() {
         .balanceOf(signerAddress)
         .then(null, (error) => console.log(error));
 
+        
+
       const token0Allowance = await token0Contract.allowance(
         signerAddress,
         RouterAddress
@@ -110,30 +112,40 @@ export default function AddLiquidity() {
         signerAddress,
         RouterAddress
       );
+
+      console.log({token0Allowance: token0Allowance + "/" + token0Input }, {token1Allowance: token0Allowance + "/" + token1Input})
       setToken0Balance(Number(ethers.formatEther(token0Bal)));
       setToken1Balance(Number(ethers.formatEther(token1Bal)));
 
       if (
-        Number(ethers.formatEther(token0Allowance)) > token0Input &&
-        Number(ethers.formatEther(token1Allowance)) < token1Input
+        Number(token0Allowance) >= token0Input &&
+        Number(token1Allowance) < token1Input
       ) {
-        console.log("testing")
+        console.log("this0")
         setNeedsApproval(true);
         return;
       }
 
       if (
-        Number(ethers.formatEther(token0Allowance)) < token0Input &&
-        Number(ethers.formatEther(token1Allowance)) > token1Input
+        Number(token0Allowance) < token0Input &&
+        Number(token1Allowance) < token1Input
       ) {
-        console.log("this1")
+
         setNeedsApproval(true);
         return;
       }
 
       if (
-        Number(ethers.formatEther(token0Allowance)) >= token0Input &&
-        Number(ethers.formatEther(token1Allowance)) >= token1Input
+        Number(token0Allowance) < token0Input &&
+        Number(token1Allowance) >= token1Input
+      ) {
+        setNeedsApproval(true);
+        return;
+      }
+
+      if (
+        Number(token0Allowance) >= token0Input &&
+        Number(token1Allowance) >= token1Input
       ) {
         setNeedsApproval(false);
         return;
@@ -177,65 +189,29 @@ export default function AddLiquidity() {
         signer
       );
       const deadline = Number(Date.now() + Deadline * 60 * 1000);
-      const doesLPTokenExist = await factoryContract.getPair(
-        token0.address,
-        token1.address
-      );
-      if (doesLPTokenExist === "0x0000000000000000000000000000000000000000") {
-        const LP_Token = await RouterContract.addLiquidity(
-          token0.address,
-          token1.address,
-          ethers.toBigInt(token0Input * 100) ** 16n,
-          ethers.toBigInt(token1Input * 100) ** 16n,
-          ethers.toBigInt(token0Input * 100) ** 16n,
-          ethers.toBigInt(token1Input * 100) ** 16n,
-          signerAddress,
-          deadline
-        ).then(null, (error) => console.log(error));
-        console.log(LP_Token);
-      }
-
-      if (doesLPTokenExist !== "0x0000000000000000000000000000000000000000") {
+  
         console.log(
-          token0.address + "\n",
-          token1.address + "\n",
-          ethers.toBigInt(Math.floor(token0Input * 100)) * 10n ** 16n + "\n",
-          ethers.toBigInt(Math.floor(token1Input * 100)) * 10n ** 16n + "\n",
-          ethers.toBigInt(
-            Math.floor((token0Input - (token0Input * (Slippage / 100))) * 100)
-          ) *
-            10n ** 16n +
-            "\n",
-          ethers.toBigInt(
-            Math.floor((token1Input - (token1Input * (Slippage / 100))) * 100)
-          ) *
-            10n ** 16n +
-            "\n",
-          signerAddress + "\n",
-          deadline + "\n"
-        );
-        const LP_Token = await RouterContract.addLiquidity(
-          token0.address,
           token1.address,
-          String(ethers.toBigInt(Math.floor(token0Input * 100)) * 10n ** 16n),
-          String(ethers.toBigInt(Math.floor(token1Input * 100)) * 10n ** 16n),
-          String(
-            ethers.toBigInt(
-              Math.floor((token0Input - (token0Input * (Slippage / 100))) * 100)
-            ) *
-              10n ** 16n
-          ),
-          String(
-            ethers.toBigInt(
-              Math.floor((token1Input - (token1Input * (Slippage / 100))) * 100)
-            ) *
-              10n ** 16n
-          ),
+          ethers.parseUnits(String(token0Input),"ether"),
+          ethers.parseUnits(String(token1Input),"ether"),
+          ethers.parseUnits(String(token0Input - (token0Input * (Slippage /100))) ,"ether"),
+          ethers.parseUnits(String(token1Input - (token1Input * (Slippage /100))) ,"ether"),
           signerAddress,
           deadline
-        ).then(null, (error) => console.log(error));
-        console.log(LP_Token);
-      }
+        );
+        const addLp = await RouterContract.addLiquidity(
+          token0.address,
+          token1.address,
+          ethers.parseUnits(String(token0Input),"ether"),
+          ethers.parseUnits(String(token1Input),"ether"),
+          ethers.parseUnits(String(token0Input - (token0Input * (Slippage /100))) ,"ether"),
+          ethers.parseUnits(String(token1Input - (token1Input * (Slippage /100))) ,"ether"),
+          signerAddress,
+          deadline
+        )
+        await addLp
+        await getBalance(token0.address, token1.address).then((error) => console.log(error));
+      
 
       // wasAdded is a boolean. Like any RPC method, an error may be thrown.
       // async() => {const wasAdded = await ethereum.request({
@@ -298,7 +274,6 @@ export default function AddLiquidity() {
         Number(ethers.formatEther(token1Allowance)) < token1Input
       ) {
 
-        console.log("here")
        const tx1 = await token0Contract
           .approve(RouterAddress, ethers.toBigInt(token0Input))
           .then(null, (error) => {
@@ -366,6 +341,8 @@ export default function AddLiquidity() {
     if (token0.address === coin.address || token1.address === coin.address) {
       return;
     }
+
+    console.log(coin.address)
 
     if (isOpen.tokenNum === 0) {
       setToken0(coin);
@@ -957,7 +934,7 @@ export default function AddLiquidity() {
             {" "}
             Invalid pair
           </button>
-        ) : token0Input === 0 || String(token0Input).length === 0 ? (
+        ) : !(token0Input > 0 || String(token0Input).length > 0) || !(token1Input > 0 || String(token1Input).length > 0) ? (
           <button className="mt-[2vh] mx-[3%] rounded-xl bg-[#888D9B] py-[2vh] mb-[2vh] font-medium text-[#3E4148]">
             {" "}
             Enter an amount
