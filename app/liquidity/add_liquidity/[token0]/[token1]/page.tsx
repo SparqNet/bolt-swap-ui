@@ -113,13 +113,13 @@ export default function AddLiquidity() {
         RouterAddress
       );
 
-      console.log({token0Allowance: token0Allowance + "/" + token0Input }, {token1Allowance: token0Allowance + "/" + token1Input})
-      setToken0Balance(Number(ethers.formatEther(token0Bal)));
-      setToken1Balance(Number(ethers.formatEther(token1Bal)));
+      console.log({token0Allowance: ethers.formatEther(token0Allowance) + "/" + token0Input }, {token1Allowance: ethers.formatEther(token1Allowance) + "/" + token1Input})
+      setToken0Balance(Number(Number(ethers.formatEther(token0Bal)).toFixed(3)));
+      setToken1Balance(Number(Number(ethers.formatEther(token1Bal)).toFixed(3)));
 
       if (
-        Number(token0Allowance) >= token0Input &&
-        Number(token1Allowance) < token1Input
+        Number(ethers.formatEther(token0Allowance)) >= token0Input &&
+        Number(ethers.formatEther(token1Allowance))  < token1Input
       ) {
         console.log("this0")
         setNeedsApproval(true);
@@ -127,25 +127,24 @@ export default function AddLiquidity() {
       }
 
       if (
-        Number(token0Allowance) < token0Input &&
-        Number(token1Allowance) < token1Input
-      ) {
-
-        setNeedsApproval(true);
-        return;
-      }
-
-      if (
-        Number(token0Allowance) < token0Input &&
-        Number(token1Allowance) >= token1Input
+        Number(ethers.formatEther(token0Allowance)) < token0Input &&
+        Number(ethers.formatEther(token1Allowance))  < token1Input
       ) {
         setNeedsApproval(true);
         return;
       }
 
       if (
-        Number(token0Allowance) >= token0Input &&
-        Number(token1Allowance) >= token1Input
+        Number(ethers.formatEther(token0Allowance)) < token0Input &&
+        Number(ethers.formatEther(token1Allowance))  >= token1Input
+      ) {
+        setNeedsApproval(true);
+        return;
+      }
+
+      if (
+        Number(ethers.formatEther(token0Allowance)) >= token0Input &&
+        Number(ethers.formatEther(token1Allowance))  >= token1Input
       ) {
         setNeedsApproval(false);
         return;
@@ -183,23 +182,18 @@ export default function AddLiquidity() {
         RouterAbi.abi,
         signer
       );
-      const factoryContract = new ethers.Contract(
+
+      const FactoryContract = new ethers.Contract(
         factory_address,
         FactoryAbi.abi,
         signer
-      );
+      )
+
+
+
       const deadline = Number(Date.now() + Deadline * 60 * 1000);
   
         console.log(
-          token1.address,
-          ethers.parseUnits(String(token0Input),"ether"),
-          ethers.parseUnits(String(token1Input),"ether"),
-          ethers.parseUnits(String(token0Input - (token0Input * (Slippage /100))) ,"ether"),
-          ethers.parseUnits(String(token1Input - (token1Input * (Slippage /100))) ,"ether"),
-          signerAddress,
-          deadline
-        );
-        const addLp = await RouterContract.addLiquidity(
           token0.address,
           token1.address,
           ethers.parseUnits(String(token0Input),"ether"),
@@ -208,9 +202,18 @@ export default function AddLiquidity() {
           ethers.parseUnits(String(token1Input - (token1Input * (Slippage /100))) ,"ether"),
           signerAddress,
           deadline
-        )
-        await addLp
-        await getBalance(token0.address, token1.address).then((error) => console.log(error));
+        );
+        await RouterContract.addLiquidity(
+          token0.address,
+          token1.address,
+          ethers.parseUnits(String(token0Input),"ether"),
+          ethers.parseUnits(String(token1Input),"ether"),
+          ethers.parseUnits(String(token0Input - (token0Input * (Slippage /100))) ,"ether"),
+          ethers.parseUnits(String(token1Input - (token1Input * (Slippage /100))) ,"ether"),
+          signerAddress,
+          deadline
+        ).finally(async () => 
+        await getBalance(token0.address, token1.address).then((error) => console.log(error)));
       
 
       // wasAdded is a boolean. Like any RPC method, an error may be thrown.
@@ -245,8 +248,6 @@ export default function AddLiquidity() {
       const signer = await provider.getSigner();
       const signerAddress = await signer.getAddress();
 
-      
-
       const token0Contract = new ethers.Contract(
         token0.address,
         ERC20.abi,
@@ -269,68 +270,69 @@ export default function AddLiquidity() {
 
       let caughtError = false;
 
+      console.log( Number(ethers.formatEther(token0Allowance)),token0Input,  Number(ethers.formatEther(token1Allowance)), token1Input  )
       if (
         Number(ethers.formatEther(token0Allowance)) < token0Input &&
         Number(ethers.formatEther(token1Allowance)) < token1Input
       ) {
-
+        console.log("test")
        const tx1 = await token0Contract
-          .approve(RouterAddress, ethers.toBigInt(token0Input))
+          .approve(RouterAddress, ethers.parseUnits(String(token0Input), "ether"))
           .then(null, (error) => {
             caughtError = true;
             console.log(error);
           });
        const tx2 = await token1Contract
-          .approve(RouterAddress, token1Input)
+          .approve(RouterAddress, ethers.parseUnits(String(token1Input), "ether"))
           .then(null, (error) => {
             caughtError = true;
             console.log(error);
           });
 
           await provider.waitForTransaction(tx1.hash)
-          await provider.waitForTransaction(tx2.hash)
-
-          if (caughtError === false) {
-            setNeedsApproval(false);
-          }
-
+          await provider.waitForTransaction(tx2.hash).finally(() => {
+            if (caughtError === false) {
+              setNeedsApproval(false);
+            }
+           })
 
       }
 
       if (
         Number(ethers.formatEther(token0Allowance)) < token0Input &&
-        Number(ethers.formatEther(token1Allowance)) > token1Input
+        Number(ethers.formatEther(token1Allowance)) >= token1Input
       ) {
-        console.log(ethers.toBigInt(token0Input))
+        console.log("test1")
         const tx1 = await token0Contract
-          .approve(RouterAddress, ethers.toBigInt(token0Input))
+          .approve(RouterAddress, ethers.parseUnits(String(token0Input), "ether"))
           .then(null, (error) => {
             caughtError = true;
             console.log(error);
           });
 
-          await provider.waitForTransaction(tx1.hash)
-
-        if (caughtError === false) {
-          setNeedsApproval(false);
-        }
+          await provider.waitForTransaction(tx1.hash).finally(() => {
+            if (caughtError === false) {
+              setNeedsApproval(false);
+            }
+           })
       }
 
       if (
-        Number(ethers.formatEther(token0Allowance)) > token0Input &&
+        Number(ethers.formatEther(token0Allowance)) >= token0Input &&
         Number(ethers.formatEther(token1Allowance)) < token1Input
       ) {
+        console.log("test2")
         const tx1 = await token1Contract
-          .approve(RouterAddress, ethers.toBigInt(token1Input))
+          .approve(RouterAddress, ethers.parseUnits(String(token1Input), "ether"))
           .then(null, (error) => {
             caughtError = true;
             console.log(error);
           });
-          await provider.waitForTransaction(tx1.hash)
-
-        if (caughtError === false) {
-          setNeedsApproval(false);
-        }
+          await provider.waitForTransaction(tx1.hash).finally(() => {
+            if (caughtError === false) {
+              setNeedsApproval(false);
+            }
+           })
       }
     } catch (error) {
       console.log(error);
@@ -907,7 +909,7 @@ export default function AddLiquidity() {
             <div className="border-[1px] border-[#86C7DB25] rounded-xl p-[3%] flex flex-row justify-between ">
               <span className="flex flex-col items-center w-1/3">
                 <p>
-                  {Number.isNaN(reserve0 / reserve1) ? 0 : reserve0 / reserve1}
+                  {Number.isNaN(reserve0 / reserve1) ? 0 : (reserve0 / reserve1).toFixed(3)}
                 </p>
                 <p>
                   {token0.symbol} per {token1.symbol}
@@ -915,7 +917,7 @@ export default function AddLiquidity() {
               </span>
               <span className="flex flex-col items-center w-1/3">
                 <p>
-                  {Number.isNaN(reserve1 / reserve0) ? 0 : reserve1 / reserve0}
+                  {Number.isNaN(reserve1 / reserve0) ? 0 : (reserve1 / reserve0).toFixed(3)}
                 </p>
                 <p>
                   {token1.symbol} per {token0.symbol}
@@ -923,7 +925,7 @@ export default function AddLiquidity() {
               </span>
 
               <span className="flex flex-col items-center w-1/3">
-                <p>{percentOfPool}%</p>
+                <p>{percentOfPool.toFixed(3)}%</p>
                 <p>Share of Pool</p>
               </span>
             </div>

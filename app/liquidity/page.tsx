@@ -199,17 +199,17 @@ const Pool = () => {
 
             <span className="flex flex-row justify-between items-center">
               <p>Your pool share:</p>
-              <p>{pair["pool_share"]}%</p>
+              <p>{pair["pool_share"].toFixed(3)}%</p>
             </span>
 
             <span className="flex flex-row justify-between items-center">
               <p>Pooled {pair["token0"]["symbol"]}:</p>
-              <p>{pair["reserve_splits"]["token0"]}</p>
+              <p>{pair["reserve_splits"]["token0"] < .001 ? 0 : pair["reserve_splits"]["token0"] }</p>
             </span>
 
             <span className="flex flex-row justify-between items-center">
               <p>Pooled {pair["token1"]["symbol"]}:</p>
-              <p>{pair["reserve_splits"]["token1"]}</p>
+              <p>{pair["reserve_splits"]["token1"]  < .001 ? 0 : pair["reserve_splits"]["token1"]}</p>
             </span>
             <span className="flex flex-row mt-[1vh] justify-between">
               <Link

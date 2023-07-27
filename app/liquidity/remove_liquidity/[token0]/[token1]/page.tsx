@@ -359,27 +359,13 @@ function RemoveLiquidity() {
       setReserve1(Number(ethers.formatEther(reserves[1])));
 
       const holdings = Number(pairBalance) / Number(totalSupply);
-      const token0holdings: number = Number(reserves[0]) / holdings;
-      const token1holdings = Number(reserves[1]) / holdings;
+      const token0holdings: number = Number(ethers.formatEther(reserves[0]))* holdings;
+      const token1holdings = Number(ethers.formatEther(reserves[0])) * holdings;
 
-      let formattedNumber = token0holdings.toString();
-      formattedNumber = formattedNumber.padStart(
-        formattedNumber.length + (18 - formattedNumber.length),
-        "0"
-      );
-      formattedNumber =
-        formattedNumber.slice(0, -18) + "." + formattedNumber.slice(-18);
-
-      let formattedNumber1 = token1holdings.toString();
-      formattedNumber1 = formattedNumber1.padStart(
-        formattedNumber1.length + (18 - formattedNumber1.length),
-        "0"
-      );
-      formattedNumber1 =
-        formattedNumber1.slice(0, -18) + "." + formattedNumber1.slice(-18);
-
-      setToken0Balance(Number(Number(formattedNumber).toFixed(2)));
-      setToken1Balance(Number(Number(formattedNumber1).toFixed(2)));
+        const bal0 = token0holdings < .001 ? 0 :token0holdings 
+        const bal1 = token1holdings < .001 ? 0 :token1holdings 
+      setToken0Balance(bal0);
+      setToken1Balance(bal1);
       setLPHoldings(Number(ethers.formatEther(pairBalance)));
       setPercentOfPool(holdings * 100);
 
@@ -644,19 +630,19 @@ function RemoveLiquidity() {
               </span>
             </div>
 
-            <span className="flex flex-row justify-between items-center p-[5%]">
+            <span className="flex flex-col justify-between p-[5%]">
               <p>Price:</p>
               <span className="flex flex-col space-y-[1vh]">
                 <p>
-                  {Number.isNaN(reserve0 / reserve1) ? 0 : reserve0 / reserve1}{" "}
+                  {Number.isNaN(reserve0 / reserve1) ? 0 : (reserve0 / reserve1).toFixed(3)}{" "}
                   {token0.symbol} ={" "}
-                  {Number.isNaN(reserve1 / reserve0) ? 0 : reserve1 / reserve0}{" "}
+                  {Number.isNaN(reserve1 / reserve0) ? 0 : (reserve1 / reserve0).toFixed(3)}{" "}
                   {token1.symbol}
                 </p>
                 <p>
-                  {Number.isNaN(reserve1 / reserve0) ? 0 : reserve1 / reserve0}{" "}
+                  {Number.isNaN(reserve1 / reserve0) ? 0 : (reserve1 / reserve0).toFixed(3)}{" "}
                   {token1.symbol} ={" "}
-                  {Number.isNaN(reserve0 / reserve1) ? 0 : reserve0 / reserve1}{" "}
+                  {Number.isNaN(reserve0 / reserve1) ? 0 : (reserve0 / reserve1).toFixed(3)}{" "}
                   {token0.symbol}
                 </p>
               </span>
@@ -698,22 +684,22 @@ function RemoveLiquidity() {
             <p>
               {token0.symbol} / {token1.symbol}
             </p>
-            <p> {lpHoldings}</p>
+            <p> {lpHoldings < .001 ? 0 : lpHoldings}</p>
           </span>
 
           <span className="flex flex-row justify-between items-center">
             <p>Your pool share:</p>
-            <p>{percentOfPool}%</p>
+            <p>{percentOfPool.toFixed(3)}%</p>
           </span>
 
           <span className="flex flex-row justify-between items-center">
             <p>{token0.symbol}:</p>
-            <p>{token0Balance}</p>
+            <p>{token0Balance  < .01 ? 0 : token0Balance}</p>
           </span>
 
           <span className="flex flex-row justify-between items-center">
             <p>{token1.symbol}:</p>
-            <p>{token1Balance}</p>
+            <p>{token1Balance < .1 ? 0 : token1Balance}</p>
           </span>
         </div>
       </div>

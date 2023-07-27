@@ -179,7 +179,7 @@ export default function Swap() {
     )
     console.log(ethers.formatEther((await PairContract.getReserves())[0].toString()))
     const AmountOut = await RouterContract.getAmountOut(
-      token0Input,
+      ethers.parseUnits(String(token0Input), "ether"),
       (await PairContract.getReserves())[0],
       (await PairContract.getReserves())[1]
     );
@@ -196,7 +196,7 @@ export default function Swap() {
 
 
     const swapT2T = await RouterContract.swapExactTokensForTokens(
-      ethers.toWei(token0Input),
+      ethers.parseUnits(String(token0Input), "ether"),
       AmountOut,
       [token1.address, token0.address],
       signerAddress,
