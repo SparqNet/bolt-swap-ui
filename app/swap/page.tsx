@@ -5,12 +5,13 @@ import CoinListItem from "@/app/components/CoinListItem";
 import ERC20 from "@/abis/ERC20.json";
 import RouterAbi from "@/abis/Router.json";
 import PairAbi from "@/abis/Pair.json";
-import FactoryAbi from "@/abis/Factory.json"
+import FactoryAbi from "@/abis/Factory.json";
+import NativeWrapperAbi from "@/abis/NativeWrapper.json";
 import {
   Gold,
   RouterAddress,
+  WrapperAddress,
   Silver,
-  WSPARQ,
   PAIR_LP,
   factory_address,
 } from "@/utils/constants";
@@ -75,6 +76,9 @@ export default function Swap() {
   const [token1Input, setToken1Input] = useState(0);
   const [direction, setDirection] = useState("down");
   const [needsApproval, setNeedsApproval] = useState(true);
+  const [zero2one, setZero2one] = useState(true);
+  const [reserve0, setReserve0] = useState(0);
+  const [reserve1, setReserve1] = useState(0);
   const [coinsForListing, setCoinsForListing] = useState([
     { name: "Gold", symbol: "GLD", address: Gold, image: "/gold.png" } as Coin,
     {
@@ -86,7 +90,7 @@ export default function Swap() {
     {
       name: "Wrapped Sparq",
       symbol: "WSPRQ",
-      address: WSPARQ,
+      address: WrapperAddress,
       image: "/logo.svg",
     } as Coin,
   ]);
@@ -99,16 +103,8 @@ export default function Swap() {
       const signer = await provider.getSigner();
       const signerAddress = await signer.getAddress();
 
-      const token0Contract = new ethers.Contract(
-        token0.address,
-        ERC20.abi,
-        signer
-      );
-      const token1Contract = new ethers.Contract(
-        token1.address,
-        ERC20.abi,
-        signer
-      );
+      const token0Contract = new ethers.Contract(token0.address, ERC20, signer);
+      const token1Contract = new ethers.Contract(token1.address, ERC20, signer);
 
       const token0Allowance = await token0Contract.allowance(
         signerAddress,
@@ -146,14 +142,13 @@ export default function Swap() {
 
     const FactoryContract = new ethers.Contract(
       factory_address,
-      FactoryAbi.abi,
+      FactoryAbi,
       signer
-    )
-
+    );
 
     const RouterContract = new ethers.Contract(
       RouterAddress,
-      RouterAbi.abi,
+      RouterAbi,
       signer
     );
 
@@ -174,35 +169,33 @@ export default function Swap() {
     );
     const PairContract = new ethers.Contract(
       await doesLPTokenExist,
-      PairAbi.abi,
+      PairAbi,
       signer
-    )
-    console.log(ethers.formatEther((await PairContract.getReserves())[0].toString()))
-    const AmountOut = await RouterContract.getAmountOut(
-      ethers.parseUnits(String(token0Input), "ether"),
-      (await PairContract.getReserves())[0],
-      (await PairContract.getReserves())[1]
     );
 
-   console.log(await RouterContract.getAmountOut(
-      token0Input,
-      (await PairContract.getReserves())[0],
-      (await PairContract.getReserves())[1]
-    ));
+    const res = await PairContract.getReserves();
 
+    console.log(res["reserve0"], res["reserve1"]);
 
-
-
-
-
-    const swapT2T = await RouterContract.swapExactTokensForTokens(
-      ethers.parseUnits(String(token0Input), "ether"),
-      AmountOut,
-      [token1.address, token0.address],
-      signerAddress,
-      deadline
-    ).then(null, (error) => console.log(error));
-    console.log(swapT2T);
+    if (
+      token0.address !== WrapperAddress ||
+      token1.address !== WrapperAddress
+    ) {
+   
+      console.log(ethers.parseUnits(String(token0Input), "ether"));
+      console.log(ethers.parseUnits(String(token1Input - (token1Input * Slippage/100)), "ether"));
+      console.log([token1.address, token0.address]);
+      console.log(signerAddress);
+      console.log(deadline);
+      const swapT2T = await RouterContract.swapExactTokensForTokens(
+        ethers.parseUnits(String(token0Input), "ether"),
+        ethers.parseUnits(String(token1Input - (token1Input * Slippage/100)), "ether"),
+        [token0.address, token1.address],
+        signerAddress,
+        deadline
+      ).then(null, (error) => console.log(error));
+      console.log(swapT2T);
+    }
   };
 
   const approveTokens = async () => {
@@ -211,16 +204,8 @@ export default function Swap() {
       const signer = await provider.getSigner();
       const signerAddress = await signer.getAddress();
 
-      const token0Contract = new ethers.Contract(
-        token0.address,
-        ERC20.abi,
-        signer
-      );
-      const token1Contract = new ethers.Contract(
-        token1.address,
-        ERC20.abi,
-        signer
-      );
+      const token0Contract = new ethers.Contract(token0.address, ERC20, signer);
+      const token1Contract = new ethers.Contract(token1.address, ERC20, signer);
 
       const token0Allowance = await token0Contract.allowance(
         signerAddress,
@@ -312,7 +297,7 @@ export default function Swap() {
       if (isOpen.tokenNum === 0) {
         const token0Contract = new ethers.Contract(
           token0.address,
-          ERC20.abi,
+          ERC20,
           signer
         );
         const balance = await token0Contract
@@ -324,13 +309,55 @@ export default function Swap() {
       if (isOpen.tokenNum === 1) {
         const token1Contract = new ethers.Contract(
           token1.address,
-          ERC20.abi,
+          ERC20,
           signer
         );
         const balance = await token1Contract
           .balanceOf(signerAddress)
           .then(null, (error) => console.log(error));
         setToken1Balance(Number(ethers.formatEther(balance)));
+      }
+
+      if (isSelected) {
+        const factoryContract = new ethers.Contract(
+          factory_address,
+          FactoryAbi,
+          signer
+        );
+
+        const token0Contract = new ethers.Contract(
+          token0.address,
+          ERC20,
+          signer
+        );
+        const balance0 = await token0Contract
+          .balanceOf(signerAddress)
+          .then(null, (error) => console.log(error));
+        setToken0Balance(Number(ethers.formatEther(balance0)));
+
+        const token1Contract = new ethers.Contract(
+          token1.address,
+          ERC20,
+          signer
+        );
+        const balance1 = await token1Contract
+          .balanceOf(signerAddress)
+          .then(null, (error) => console.log(error));
+        setToken1Balance(Number(ethers.formatEther(balance1)));
+
+        const pairAddress = await factoryContract.getPair(
+          token0.address,
+          token1.address
+        );
+
+        const pairContract = new ethers.Contract(pairAddress, PairAbi, signer);
+
+        const reserves: any = await pairContract
+          .getReserves()
+          .then(null, (error) => console.log(error));
+
+        setReserve0(Number(ethers.formatEther(reserves[0])));
+        setReserve1(Number(ethers.formatEther(reserves[1])));
       }
     } catch (error) {
       console.log(error);
@@ -427,7 +454,7 @@ export default function Swap() {
         <div className="border-[1px] border-[#86C7DB25] rounded-xl mx-[3%] mt-[5%] p-[3%] text-white">
           <div className="flex flex-row justify-between">
             <span className="select-none text-sm">From</span>
-            <span key={token0Balance}>Balance:{token0Balance}</span>
+            <span key={token0.address}>Balance:{token0Balance}</span>
           </div>
 
           <div className="flex flex-row justify-between py-[.5vh]">
@@ -450,9 +477,10 @@ export default function Swap() {
         </div>
         <span
           className="mx-auto text-white text-xl my-[1vh] p-2 border border-[1px] border-[#86C7DB25] bg-[#00DAAC30] rounded-lg cursor-pointer box-border"
-          onClick={() => {
+          onClick={async () => {
             if (isSelected) {
               const temp = token0;
+
               setToken0(token1);
               setToken1(temp);
               if (direction === "down") {
@@ -460,6 +488,7 @@ export default function Swap() {
               } else {
                 setDirection("down");
               }
+              await getBalance();
             }
           }}
         >
@@ -516,25 +545,25 @@ export default function Swap() {
         </div>
         {isSelected ? (
           <div className="border-[1px] border-[#86C7DB25] rounded-xl mx-[3%] text-white flex flex-col mt-[2vh] ">
-            <span className="p-[3%]">Prices and pool share</span>
-            <div className="border-[1px] border-[#86C7DB25] rounded-xl p-[3%] flex flex-row justify-between ">
-              <span className="flex flex-col items-center w-1/3">
-                <p>14.95</p>
-                <p>
-                  {token0.symbol} per {token1.symbol}
+            <span className="p-[3%]">Price and Impact</span>
+            <div className="border-[1px] border-[#86C7DB25] rounded-xl p-[3%] flex flex-col justify-between ">
+              <span className="flex flex-row items-center w-full space-x-1">
+                Price:{" "}
+                <p key={direction}>
+                  {direction === "up"
+                    ? Number.isNaN(reserve0 / reserve1)
+                      ? 0
+                      : " " + (reserve0 / reserve1).toFixed(3)
+                    : Number.isNaN(reserve1 / reserve0)
+                    ? 0
+                    : (reserve1 / reserve0).toFixed(3)}
                 </p>
+                <span className="font-bold">- {token0.symbol}</span>
+                <span> per </span>
+                <span className="font-bold">{token1.symbol}</span>
               </span>
-              <span className="flex flex-col items-center w-1/3">
-                <p>14.95</p>
-                <p>
-                  {token1.symbol} per {token0.symbol}
-                </p>
-              </span>
-
-              <span className="flex flex-col items-center w-1/3">
-                <p>0%</p>
-                <p>Share of Pool</p>
-              </span>
+              <span>Impact: 10%</span>
+              <span>Minimum Received: 30 {token1.symbol}</span>
             </div>
           </div>
         ) : null}

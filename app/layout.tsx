@@ -198,6 +198,9 @@ export default function RootLayout({
                   </button>
                 ) : (
                   <>
+                  <Link href={"/swap/wrap"} className="rounded-lg bg-white h-[4vh] px-3 py-2 font-bold">
+                    Get WSPARQ &nbsp;🔄
+                  </Link>
                     {" "}
                     <p className="rounded-lg bg-[#00DAAC40] h-[4vh] px-3 py-2 text-[#00DAAC] font-bold">
                       {network}
@@ -260,19 +263,19 @@ export default function RootLayout({
               </span>
             </span>
 
-            {network === "Wrong Network" ||
+            {/* {network === "Wrong Network" ||
             network === "" ||
             Connection === false ? (
               <div className="h-[89.5vh] w-full flex flex-row justify-center items-center">
                 {" "}
                 <span className="flex flex-row justify-center items-center bg-[#00DAAC40] max-w-[30vw] h-[20vh] max-h-[20vh] rounded-lg p-[3%] text-[#00DAAC] font-bold">
                   {" "}
-                  Please change to Avalanche Fuji network to continue.
+                  Please change to the Orbiter Dex Chain to continue.
                 </span>
               </div>
-            ) : (
-              children
-            )}
+            ) : ( */}
+              {children}
+            {/* )} */}
           </div>
         </div>
       </body>

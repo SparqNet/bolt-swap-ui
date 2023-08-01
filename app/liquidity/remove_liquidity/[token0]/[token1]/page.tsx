@@ -75,7 +75,7 @@ function RemoveLiquidity() {
 
       const factoryContract = new ethers.Contract(
         factory_address,
-        FactoryAbi.abi,
+        FactoryAbi,
         signer
       );
 
@@ -85,7 +85,7 @@ function RemoveLiquidity() {
       );
       const pairContract = new ethers.Contract(
         pairAddress,
-        PairAbi.abi,
+        PairAbi,
         signer
       );
 
@@ -128,7 +128,7 @@ function RemoveLiquidity() {
 
       const RouterContract = new ethers.Contract(
         RouterAddress,
-        RouterAbi.abi,
+        RouterAbi,
         signer
       );
 
@@ -269,7 +269,7 @@ function RemoveLiquidity() {
 
       const factoryContract = new ethers.Contract(
         factory_address,
-        FactoryAbi.abi,
+        FactoryAbi,
         signer
       );
 
@@ -279,7 +279,7 @@ function RemoveLiquidity() {
       );
       const pairContract = new ethers.Contract(
         pairAddress,
-        PairAbi.abi,
+        PairAbi,
         signer
       );
 
@@ -335,14 +335,14 @@ function RemoveLiquidity() {
 
       const factoryContract = new ethers.Contract(
         factory_address,
-        FactoryAbi.abi,
+        FactoryAbi,
         signer
       );
 
       const pairAddress = await factoryContract.getPair(token0, token1);
       const pairContract = new ethers.Contract(
         pairAddress,
-        PairAbi.abi,
+        PairAbi,
         signer
       );
       const totalSupply = await pairContract
@@ -360,7 +360,7 @@ function RemoveLiquidity() {
 
       const holdings = Number(pairBalance) / Number(totalSupply);
       const token0holdings: number = Number(ethers.formatEther(reserves[0]))* holdings;
-      const token1holdings = Number(ethers.formatEther(reserves[0])) * holdings;
+      const token1holdings = Number(ethers.formatEther(reserves[1])) * holdings;
 
         const bal0 = token0holdings < .001 ? 0 :token0holdings 
         const bal1 = token1holdings < .001 ? 0 :token1holdings 
@@ -369,7 +369,7 @@ function RemoveLiquidity() {
       setLPHoldings(Number(ethers.formatEther(pairBalance)));
       setPercentOfPool(holdings * 100);
 
-      const token0Contract = new ethers.Contract(token0, ERC20.abi, signer);
+      const token0Contract = new ethers.Contract(token0, ERC20, signer);
 
       const symbol0 = await token0Contract
         .symbol()
@@ -385,7 +385,7 @@ function RemoveLiquidity() {
         address: token0,
       } as Coin);
 
-      const token1Contract = new ethers.Contract(token1, ERC20.abi, signer);
+      const token1Contract = new ethers.Contract(token1, ERC20, signer);
 
       const symbol1 = await token1Contract
         .symbol()
@@ -413,7 +413,7 @@ function RemoveLiquidity() {
 
         const factoryContract = new ethers.Contract(
           factory_address,
-          FactoryAbi.abi,
+          FactoryAbi,
           signer
         );
         const pairAddress = await factoryContract.getPair(
@@ -422,7 +422,7 @@ function RemoveLiquidity() {
         );
         const pairContract = new ethers.Contract(
           pairAddress,
-          PairAbi.abi,
+          PairAbi,
           signer
         );
         const totalSupply = await pairContract.totalSupply();
@@ -461,7 +461,7 @@ function RemoveLiquidity() {
 
         const factoryContract = new ethers.Contract(
           factory_address,
-          FactoryAbi.abi,
+          FactoryAbi,
           signer
         );
         const pairAddress = await factoryContract.getPair(
@@ -470,7 +470,7 @@ function RemoveLiquidity() {
         );
         const pairContract = new ethers.Contract(
           pairAddress,
-          PairAbi.abi,
+          PairAbi,
           signer
         );
         const totalSupply = await pairContract.totalSupply();

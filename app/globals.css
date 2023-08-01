@@ -31,3 +31,38 @@ input[type=range] {
     background-color: white;
     cursor: pointer;
   }
+
+  .question-container {
+    position: relative;
+  }
+  
+  .tooltip {
+    font-size: small;
+    width: 20vw;
+    position: absolute;
+    bottom: 100%; /* Position the tooltip above the image */
+    right: 0%; /* Center the tooltip horizontally */
+    padding: 1vw;
+    background-color: #333;
+    color: #fff;
+    border-radius: 5px;
+    display: none; /* Hide the tooltip by default */
+  }
+
+  .tooltip::before {
+    content: "";
+    position: absolute;
+    top: 100%; /* Position the triangle below the tooltip */
+    left: 50%;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent #333 transparent; /* Adjust color to match tooltip background */
+    transform: translateX(-50%);
+  }
+  
+  
+  /* Show the tooltip when hovering over the image container */
+  .question-container:hover .tooltip {
+    display: block;
+  }
+  

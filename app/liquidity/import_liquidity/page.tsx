@@ -23,7 +23,6 @@ import {
 import { ethers } from "ethers";
 import Link from "next/link";
 import React, { Fragment, use, useEffect, useState } from "react";
-import { json } from "stream/consumers";
 
 interface Coin {
   name: string;
@@ -88,11 +87,11 @@ export default function ImportLiquidity() {
 
       const contract = new ethers.Contract(
         factory_address,
-        FactoryAbi.abi,
+        FactoryAbi,
         signer
       );
       const pair = await contract.getPair(token0.address, token1.address);
-      const tokenContract = new ethers.Contract(pair, PairAbi.abi, signer);
+      const tokenContract = new ethers.Contract(pair, PairAbi, signer);
 
       const supply = Number(
         ethers.formatEther(await tokenContract.totalSupply())
@@ -100,6 +99,8 @@ export default function ImportLiquidity() {
       const balance = Number(
         ethers.formatEther(await tokenContract.balanceOf(signerAddress))
       );
+
+      console.log(balance)
       const reserves = await tokenContract.getReserves();
       const shareOfPool = balance / supply;
       setLPBalance(Math.floor(balance));

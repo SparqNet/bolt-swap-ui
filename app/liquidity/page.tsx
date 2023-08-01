@@ -47,7 +47,7 @@ const Pool = () => {
       for (let i = 0; i < Object.keys(savedPairs).length; i++) {
         const pairContract = new ethers.Contract(
           savedPairs[i],
-          PairAbi.abi,
+          PairAbi,
           signer
         );
         const token0 = await pairContract.token0();
@@ -55,12 +55,12 @@ const Pool = () => {
 
         const token0_contract = new ethers.Contract(
           token0,
-          ERC20Abi.abi,
+          ERC20Abi,
           signer
         );
         const token1_contract = new ethers.Contract(
           token1,
-          ERC20Abi.abi,
+          ERC20Abi,
           signer
         );
 

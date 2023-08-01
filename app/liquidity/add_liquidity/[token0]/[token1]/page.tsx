@@ -10,6 +10,7 @@ import {
   Gold,
   RouterAddress,
   Silver,
+  WrapperAddress,
   factory_address,
 } from "@/utils/constants";
 import { Dialog, Transition } from "@headlessui/react";
@@ -47,9 +48,9 @@ export default function AddLiquidity() {
 
   const [isSelected, setSelected] = useState(false);
   const [token0, setToken0] = useState({
-    name: "Sparq",
-    symbol: "SPRQ",
-    address: "",
+    name: "WSPARQ",
+    symbol: "WSPRQ",
+    address: WrapperAddress,
     image: "/logo.svg",
   } as Coin);
   const [token1, setToken1] = useState({
@@ -85,12 +86,12 @@ export default function AddLiquidity() {
 
       const token0Contract = new ethers.Contract(
         token0.address,
-        ERC20.abi,
+        ERC20,
         signer
       );
       const token1Contract = new ethers.Contract(
         token1.address,
-        ERC20.abi,
+        ERC20,
         signer
       );
 
@@ -179,13 +180,13 @@ export default function AddLiquidity() {
 
       const RouterContract = new ethers.Contract(
         RouterAddress,
-        RouterAbi.abi,
+        RouterAbi,
         signer
       );
 
       const FactoryContract = new ethers.Contract(
         factory_address,
-        FactoryAbi.abi,
+        FactoryAbi,
         signer
       )
 
@@ -250,12 +251,12 @@ export default function AddLiquidity() {
 
       const token0Contract = new ethers.Contract(
         token0.address,
-        ERC20.abi,
+        ERC20,
         signer
       );
       const token1Contract = new ethers.Contract(
         token1.address,
-        ERC20.abi,
+        ERC20,
         signer
       );
 
@@ -366,7 +367,7 @@ export default function AddLiquidity() {
 
       const factoryContract = new ethers.Contract(
         factory_address,
-        FactoryAbi.abi,
+        FactoryAbi,
         signer
       );
 
@@ -377,7 +378,7 @@ export default function AddLiquidity() {
       }
       const pairContract = new ethers.Contract(
         pairAddress,
-        PairAbi.abi,
+        PairAbi,
         signer
       );
 
@@ -417,7 +418,7 @@ export default function AddLiquidity() {
       // setLPHoldings(Number(ethers.formatEther(pairBalance)));
       setPercentOfPool(holdings * 100);
 
-      const token0Contract = new ethers.Contract(token0, ERC20.abi, signer);
+      const token0Contract = new ethers.Contract(token0, ERC20, signer);
 
       const symbol0 = await token0Contract
         .symbol()
@@ -433,7 +434,7 @@ export default function AddLiquidity() {
         address: token0,
       } as Coin);
 
-      const token1Contract = new ethers.Contract(token1, ERC20.abi, signer);
+      const token1Contract = new ethers.Contract(token1, ERC20, signer);
 
       const symbol1 = await token1Contract
         .symbol()
@@ -467,7 +468,7 @@ export default function AddLiquidity() {
 
   //         const factoryContract = new ethers.Contract(
   //           factory_address,
-  //           FactoryAbi.abi,
+  //           FactoryAbi,
   //           signer
   //         );
   //         const pairAddress = await factoryContract.getPair(
@@ -476,7 +477,7 @@ export default function AddLiquidity() {
   //         );
   //         const pairContract = new ethers.Contract(
   //           pairAddress,
-  //           PairAbi.abi,
+  //           PairAbi,
   //           signer
   //         );
   //         if (lpTokenExists === false) {
@@ -533,7 +534,7 @@ export default function AddLiquidity() {
 
   //         const factoryContract = new ethers.Contract(
   //           factory_address,
-  //           FactoryAbi.abi,
+  //           FactoryAbi,
   //           signer
   //         );
   //         const pairAddress = await factoryContract.getPair(
@@ -542,7 +543,7 @@ export default function AddLiquidity() {
   //         );
   //         const pairContract = new ethers.Contract(
   //           pairAddress,
-  //           PairAbi.abi,
+  //           PairAbi,
   //           signer
   //         );
 
@@ -608,7 +609,7 @@ export default function AddLiquidity() {
       try {
         const provider = new ethers.BrowserProvider(window.ethereum);
 
-        const tokenContract = new ethers.Contract(query, ERC20.abi, provider);
+        const tokenContract = new ethers.Contract(query, ERC20, provider);
 
         const symbol0 = await tokenContract
           .symbol()
@@ -803,7 +804,10 @@ export default function AddLiquidity() {
             <ArrowSmallLeftIcon color="white" width="1vw" height="1vw" />
           </Link>
           <span className="text-white font-medium text-xl">Add Liquidity</span>
+          <span className="question-container">
           <QuestionMarkCircleIcon color="white" width="1vw" height="1vw" />
+          <div className="tooltip">Be careful when adding uneven amounts of liquidity due to impermanent loss</div>
+          </span>
         </div>
         <div className="border-[1px] border-[#86C7DB25] rounded-xl mx-[3%] p-[3%] text-white ">
           <div className="flex flex-row justify-between">
