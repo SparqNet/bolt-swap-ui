@@ -17,3 +17,17 @@ export const RouterAddress = "0x1073652AA8272A19EBF70832d4E3861aC1664F1A"
 
 //WSPARQ:
 export const WrapperAddress = "0x357872F740253583bAadBd7fAd7a192E0f3e22d9"
+
+
+export const compareHex = (a:string, b:string) => {
+    const numA = parseInt(a, 16);
+    const numB = parseInt(b, 16);
+  
+    if (numA < numB) {
+      return -1;
+    } else if (numA > numB) {
+      return 1;
+    } else {
+      return 0;
+    }
+  }

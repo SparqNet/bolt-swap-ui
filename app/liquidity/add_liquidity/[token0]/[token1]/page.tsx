@@ -11,6 +11,7 @@ import {
   RouterAddress,
   Silver,
   WrapperAddress,
+  compareHex,
   factory_address,
 } from "@/utils/constants";
 import { Dialog, Transition } from "@headlessui/react";
@@ -205,8 +206,8 @@ export default function AddLiquidity() {
           deadline
         );
         await RouterContract.addLiquidity(
-          token0.address,
-          token1.address,
+          [token0.address, token1.address].sort(compareHex)[0],
+          [token0.address, token1.address].sort(compareHex)[1],
           ethers.parseUnits(String(token0Input),"ether"),
           ethers.parseUnits(String(token1Input),"ether"),
           ethers.parseUnits(String(token0Input - (token0Input * (Slippage /100))) ,"ether"),
@@ -959,7 +960,7 @@ export default function AddLiquidity() {
             className="mt-[2vh] mx-[3%] rounded-xl  bg-[#00DAAC30] py-[2vh] mb-[2vh] font-medium text-[#00DAAC] shadow shadow-lg"
           >
             {" "}
-            Supply liquidity
+            Supply Liquidity
           </button>
         )}
       </div>

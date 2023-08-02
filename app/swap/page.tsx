@@ -14,6 +14,7 @@ import {
   Silver,
   PAIR_LP,
   factory_address,
+  compareHex,
 } from "@/utils/constants";
 import { Dialog, Transition } from "@headlessui/react";
 import {
@@ -76,7 +77,7 @@ export default function Swap() {
   const [token1Input, setToken1Input] = useState(0);
   const [direction, setDirection] = useState("down");
   const [needsApproval, setNeedsApproval] = useState(true);
-  const [zero2one, setZero2one] = useState(true);
+  const [impact, setImpact] = useState(0);
   const [reserve0, setReserve0] = useState(0);
   const [reserve1, setReserve1] = useState(0);
   const [coinsForListing, setCoinsForListing] = useState([
@@ -115,17 +116,32 @@ export default function Swap() {
         RouterAddress
       );
 
+      console.log(  Number(ethers.formatEther(token0Allowance)))
+
+      console.log(  Number(ethers.formatEther(token1Allowance)))
+
       if (
-        Number(token0Allowance) < token0Input &&
-        Number(token1Allowance) < token1Input
+
+        Number(ethers.formatEther(token0Allowance)) < token0Input &&
+        Number(ethers.formatEther(token1Allowance)) > token1Input ||      Number(ethers.formatEther(token0Allowance)) > token0Input &&
+        Number(ethers.formatEther(token1Allowance)) < token1Input
       ) {
         setNeedsApproval(true);
         return;
       }
 
       if (
-        Number(token0Allowance) >= token0Input &&
-        Number(token1Allowance) >= token1Input
+
+        Number(ethers.formatEther(token0Allowance)) < token0Input &&
+        Number(ethers.formatEther(token1Allowance)) < token1Input
+      ) {
+        setNeedsApproval(true);
+        return;
+      }
+
+      if (
+        Number(ethers.formatEther(token0Allowance)) >= token0Input &&
+        Number(ethers.formatEther(token1Allowance)) >= token1Input
       ) {
         setNeedsApproval(false);
         return;
@@ -134,6 +150,55 @@ export default function Swap() {
       console.log(error);
     }
   };
+
+  const calcOutAmount = async () => {
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const signerAddress = await signer.getAddress();
+
+
+    const FactoryContract = new ethers.Contract(
+      factory_address,
+      FactoryAbi,
+      signer
+    );
+
+    const doesLPTokenExist = await FactoryContract.getPair(
+      token0.address,
+      token1.address
+    );
+    const PairContract = new ethers.Contract(
+      await doesLPTokenExist,
+      PairAbi,
+      signer
+    );
+
+    const res = await PairContract.getReserves();
+
+    const reserve0:bigint = res["reserve0"]
+    const reserve1:bigint = res["reserve1"]
+    
+   
+    const token0InputAmount =  ethers.parseUnits(String(token0Input), "ether")
+    const amountInWFee = token0InputAmount * ethers.toBigInt(997)
+    const numerator = amountInWFee * (0 === token0.address.toLowerCase().localeCompare([token0.address, token1.address].sort(compareHex)[0].toLowerCase()) ?  reserve1 : reserve0)
+    const denominator = (0 === token0.address.toLowerCase().localeCompare([token0.address, token1.address].sort(compareHex)[0].toLowerCase()) ? reserve0 : reserve1) * ethers.toBigInt(1000) + amountInWFee
+    setToken1Input(Number(ethers.formatEther(numerator/ denominator)))
+    const toke1 = document.getElementById('token1Input') as HTMLInputElement;
+    toke1.value = Number(ethers.formatEther(numerator/ denominator)).toFixed(3)
+
+    const kstant:bigint = (0 === token0.address.toLowerCase().localeCompare([token0.address, token1.address].sort(compareHex)[0].toLowerCase()) ?  reserve1 : reserve0) * (0 === token0.address.toLowerCase().localeCompare([token0.address, token1.address].sort(compareHex)[0].toLowerCase()) ?  reserve0 : reserve1)
+    const inReserveChange = (0 === token0.address.toLowerCase().localeCompare([token0.address, token1.address].sort(compareHex)[0].toLowerCase()) ?  reserve1 : reserve0) + token0InputAmount
+    const outReserveChange = kstant / inReserveChange
+    const pricePaid:number = Number(token0InputAmount) / Number(outReserveChange)
+    const reserveIn =  token0.address.toLowerCase().localeCompare([token0.address, token1.address].sort(compareHex)[0].toLowerCase()) == 0 ?  reserve0 : reserve1
+    const reserveOut =  token0.address.toLowerCase().localeCompare([token0.address, token1.address].sort(compareHex)[0].toLowerCase()) == 0 ?  reserve1 : reserve0
+    const bestPrice:number = Number(reserveIn) / Number(reserveOut)
+   const impact = pricePaid / bestPrice
+
+    setImpact(Number((impact * 100).toFixed(3)))
+  }
 
   const swap = async () => {
     const provider = new ethers.BrowserProvider(window.ethereum);
@@ -175,27 +240,14 @@ export default function Swap() {
 
     const res = await PairContract.getReserves();
 
-    console.log(res["reserve0"], res["reserve1"]);
-
-    if (
-      token0.address !== WrapperAddress ||
-      token1.address !== WrapperAddress
-    ) {
-   
-      console.log(ethers.parseUnits(String(token0Input), "ether"));
-      console.log(ethers.parseUnits(String(token1Input - (token1Input * Slippage/100)), "ether"));
-      console.log([token1.address, token0.address]);
-      console.log(signerAddress);
-      console.log(deadline);
-      const swapT2T = await RouterContract.swapExactTokensForTokens(
+   await RouterContract.swapExactTokensForTokens(
         ethers.parseUnits(String(token0Input), "ether"),
         ethers.parseUnits(String(token1Input - (token1Input * Slippage/100)), "ether"),
-        [token0.address, token1.address],
+       0 === token0.address.toLowerCase().localeCompare([token0.address, token1.address].sort(compareHex)[0].toLowerCase()) ? [token0.address, token1.address]: [token1.address, token0.address],
         signerAddress,
         deadline
       ).then(null, (error) => console.log(error));
-      console.log(swapT2T);
-    }
+    
   };
 
   const approveTokens = async () => {
@@ -217,17 +269,17 @@ export default function Swap() {
       );
       let caughtError = false;
       if (
-        Number(token0Allowance) < token0Input &&
-        Number(token1Allowance) < token1Input
+        Number(ethers.formatEther(token0Allowance)) < token0Input &&
+        Number(ethers.formatEther(token1Allowance)) < token1Input
       ) {
         await token0Contract
-          .approve(RouterAddress, token0Input)
+          .approve(RouterAddress, ethers.parseUnits(String(token0Input + 50), "ether"))
           .then(null, (error) => {
             caughtError = true;
             console.log(error);
           });
         await token1Contract
-          .approve(RouterAddress, token1Input)
+          .approve(RouterAddress, ethers.parseUnits(String(token1Input + 50), "ether"))
           .then(null, (error) => {
             caughtError = true;
             console.log(error);
@@ -238,11 +290,11 @@ export default function Swap() {
       }
 
       if (
-        Number(token0Allowance) < token0Input &&
-        Number(token1Allowance) > token1Input
+        Number(ethers.formatEther(token0Allowance)) < token0Input &&
+        Number(ethers.formatEther(token1Allowance)) > token1Input
       ) {
         await token0Contract
-          .approve(RouterAddress, token0Input)
+          .approve(RouterAddress, ethers.parseUnits(String(token0Input + 50), "ether"))
           .then(null, (error) => {
             caughtError = true;
             console.log(error);
@@ -253,11 +305,11 @@ export default function Swap() {
       }
 
       if (
-        Number(token0Allowance) > token0Input &&
-        Number(token1Allowance) < token1Input
+        Number(ethers.formatEther(token0Allowance)) > token0Input &&
+        Number(ethers.formatEther(token1Allowance)) < token1Input
       ) {
         await token1Contract
-          .approve(RouterAddress, token1Input)
+          .approve(RouterAddress, ethers.parseUnits(String(token1Input + 50), "ether"))
           .then(null, (error) => {
             caughtError = true;
             console.log(error);
@@ -374,6 +426,12 @@ export default function Swap() {
     getBalance();
   }, [token0, token1]);
 
+
+  useEffect(()=> {
+    if (isSelected === true) {
+    calcOutAmount()
+    }
+  }, [token0Input])
   return (
     <>
       <Transition appear show={isOpen.show === true} as={Fragment}>
@@ -453,13 +511,16 @@ export default function Swap() {
       <div className="flex flex-col box-border md:max-w-[27vw] mx-auto bg-[#00AFE340] rounded-3xl mt-[10vh]">
         <div className="border-[1px] border-[#86C7DB25] rounded-xl mx-[3%] mt-[5%] p-[3%] text-white">
           <div className="flex flex-row justify-between">
-            <span className="select-none text-sm">From</span>
-            <span key={token0.address}>Balance:{token0Balance}</span>
+            <span className="select-none text-sm">From {isSelected && (0 === token0.address.toLowerCase().localeCompare([token0.address, token1.address].sort(compareHex)[1].toLowerCase())) ? "(estimated)":  "" }</span>
+            <span key={token0.address}>Balance:{token0Balance.toFixed(2)}</span>
           </div>
 
           <div className="flex flex-row justify-between py-[.5vh]">
             <input
-              onChange={(e) => setToken0Input(Number(e.target.value))}
+              onChange={(e) => {
+                setToken0Input(Number(e.target.value))
+                calcOutAmount()
+              }}
               id="token0"
               type="number"
               className="text-2xl bg-transparent border-transparent w-1/2 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -497,18 +558,20 @@ export default function Swap() {
 
         <div className="border-[1px] border-[#86C7DB25] rounded-xl mx-[3%] p-[3%] text-white ">
           <div className="flex flex-row justify-between">
-            <span className="select-none text-sm">To</span>
+            <span className="select-none text-sm">To {isSelected && (0 === token1.address.toLowerCase().localeCompare([token0.address, token1.address].sort(compareHex)[1].toLowerCase())) ? "(estimated)" : ""}</span>
             <span className="select-none">
               {" "}
-              {isSelected === true ? `Balance:${token1Balance}` : "-"}
+              {isSelected === true ? `Balance:${token1Balance.toFixed(2)}` : "-"}
             </span>
           </div>
 
           {isSelected === true ? (
             <div className="flex flex-row justify-between items-end py-[.5vh]">
               <input
-                onChange={(e) => setToken1Input(Number(e.target.value))}
-                id="token1"
+                onChange={(e) => {
+                  setToken1Input(Number(e.target.value))
+                }}
+                id="token1Input"
                 type="number"
                 className="text-2xl bg-transparent border-transparent w-1/2 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.0"
@@ -548,7 +611,6 @@ export default function Swap() {
             <span className="p-[3%]">Price and Impact</span>
             <div className="border-[1px] border-[#86C7DB25] rounded-xl p-[3%] flex flex-col justify-between ">
               <span className="flex flex-row items-center w-full space-x-1">
-                Price:{" "}
                 <p key={direction}>
                   {direction === "up"
                     ? Number.isNaN(reserve0 / reserve1)
@@ -562,8 +624,7 @@ export default function Swap() {
                 <span> per </span>
                 <span className="font-bold">{token1.symbol}</span>
               </span>
-              <span>Impact: 10%</span>
-              <span>Minimum Received: 30 {token1.symbol}</span>
+              <span>Impact: <span className={impact < 10 ? "text-green-500 font-bold" : impact < 25 ? "text-yellow-500  font-bold" : impact > 25 ? "text-red-500  font-bold": ""}>{impact}%</span></span>
             </div>
           </div>
         ) : null}
