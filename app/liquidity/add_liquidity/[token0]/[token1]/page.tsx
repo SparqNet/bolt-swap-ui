@@ -45,6 +45,13 @@ export default function AddLiquidity() {
       address: Silver,
       image: "/silver.png",
     } as Coin,
+    {
+      name: "Wrapped Sparq",
+      symbol: "WSPRQ",
+      address: WrapperAddress,
+      image: "/logo.svg",
+    } as Coin,
+
   ];
 
   const [isSelected, setSelected] = useState(false);
