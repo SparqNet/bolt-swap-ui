@@ -12,7 +12,7 @@ type SettingActions = {
   updateDeadline: (deadline: number) => void;
 };
 
-const initialSlippageState: number = 0.5;
+const initialSlippageState: number = 5;
 
 const initialNetworkState: Network = {
   chainId: 0,

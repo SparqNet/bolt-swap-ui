@@ -5,11 +5,9 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ethers, formatEther } from "ethers";
+import { ethers } from "ethers";
 import {
-  Cog6ToothIcon,
   Cog8ToothIcon,
-  CogIcon,
   QuestionMarkCircleIcon,
   WalletIcon,
 } from "@heroicons/react/24/outline";
@@ -228,7 +226,7 @@ export default function RootLayout({
                         color="#00DAAC"
                         height="100%"
                       />
-                      <div onClick={(event) => handleDivClick(event)} className={settingsOpened === false ? "hidden" : "z-20 block absolute top-[5vh] text-white right-0 rounded-lg bg-[#00AFE340] h-[20vh] w-[20vw] transition-opacity duration-[2000] p-[3%] flex flex-col"}>
+                      <div onClick={(event) => handleDivClick(event)} className={settingsOpened === false ? "hidden" : "z-20 block absolute top-[5vh] text-white right-0 rounded-lg bg-[#00AFE340] w-[20vw] transition-opacity duration-[2000] p-[3%] flex flex-col"}>
                         <p className="font-medium text-left">
                           Transaction Settings
                         </p>
@@ -237,11 +235,11 @@ export default function RootLayout({
                           <QuestionMarkCircleIcon width="1vw" />
                         </span>
                         <span className="flex flex-row space-x-[.3vw] w-full z-2 pt-[.5vh]">
-                          <button onClick={(event)=> handleButtonClick(event, 0.1)} className="rounded-full py-[.2vh] px-[.5vw] bg-black border border-solid-[1px] border-[#404040] text-white">0.1%</button>
-                          <button onClick={(event)=> handleButtonClick(event, 0.5)}  className="rounded-full py-[.2vh] px-[.5vw] bg-black border border-solid-[1px] border-[#404040] text-white">0.5%</button>
-                          <button onClick={(event)=> handleButtonClick(event, 1)}  className="rounded-full py-[.2vh] px-[.5vw] bg-black border border-solid-[1px] border-[#404040] text-white">1%</button>
+                          <button onClick={(event)=> handleButtonClick(event, 3)} className="rounded-full py-[.2vh] px-[.5vw] bg-black border border-solid-[1px] border-[#404040] text-white">3%</button>
+                          <button onClick={(event)=> handleButtonClick(event, 10)}  className="rounded-full py-[.2vh] px-[.5vw] bg-black border border-solid-[1px] border-[#404040] text-white">10%</button>
+                          <button onClick={(event)=> handleButtonClick(event, 20)}  className="rounded-full py-[.2vh] px-[.5vw] bg-black border border-solid-[1px] border-[#404040] text-white">20%</button>
                           <span onClick={(event)=> handleButtonClick(event, "")} className="rounded-full py-[.2vh] px-[.5vw] bg-black border border-solid-[1px] border-[#404040] text-white flex flex-row">
-                          <input onChange={(e) => updateSlippage(e.target.value)} id="slippageInput" className="appearance-none outline-none border-none bg-transparent w-full text-right text-white placeholder:text-[#404040]" placeholder=".50"></input>
+                          <input onChange={(e) => updateSlippage(e.target.value)} id="slippageInput" className="appearance-none outline-none border-none bg-transparent w-full text-right text-white placeholder:text-[#404040]" placeholder="5"></input>
                           <span>%</span>
                           </span>
                         </span>
@@ -250,9 +248,9 @@ export default function RootLayout({
                           <p className="font-extralight text-left">Transaction Deadline</p>
                           <QuestionMarkCircleIcon width="1vw" />
                         </span>
-                        <span className="flex flex-row items-center">
+                        <span className="flex flex-row items-center pb-[3%]">
                         <span onClick={(event)=> handleButtonClick(event, "")} className="rounded-full w-[30%] mt-[.5vh] py-[.2vh] px-[.5vw] bg-black border border-solid-[1px] border-[#404040] text-[#404040] flex flex-row">
-                          <input onChange={(e) => updateDeadline(e.target.value)} id="slippageInput" className="appearance-none outline-none border-none bg-transparent w-full text-right text-white placeholder:text-[#404040]" placeholder="10"></input>
+                          <input onChange={(e) => updateDeadline(e.target.value)} id="transactionDeadline" className="appearance-none outline-none border-none bg-transparent w-full text-right text-white placeholder:text-[#404040]" placeholder="10"></input>
                           </span>
                           <span className="font-extralight pl-[.3vw]">minutes</span>
                           </span>
@@ -263,7 +261,7 @@ export default function RootLayout({
               </span>
             </span>
 
-            {/* {network === "Wrong Network" ||
+            {network === "Wrong Network" ||
             network === "" ||
             Connection === false ? (
               <div className="h-[89.5vh] w-full flex flex-row justify-center items-center">
@@ -273,9 +271,9 @@ export default function RootLayout({
                   Please change to the Orbiter Dex Chain to continue.
                 </span>
               </div>
-            ) : ( */}
-              {children}
-            {/* )} */}
+            ) : (
+              children
+            )}
           </div>
         </div>
       </body>

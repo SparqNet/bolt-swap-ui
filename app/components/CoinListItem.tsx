@@ -12,8 +12,8 @@ function CoinListItem({ chooseToken ,coin, addToken}: any){
                 key={coin.name}
                 data-decimals={coin.decimals}
                 data-address={coin.id}>
-                                <div onClick={() => chooseToken(coin)} className="border border-t-grey1 border-transparent px-5 py-2 flex justify-between items-start w-full">
-                                  <div className="flex items-start gap-x-3">
+                                <div onClick={() => chooseToken(coin)} className="border border-transparent px-5 pb-4 flex justify-between items-start w-full">
+                                  <div className="flex items-start gap-x-3 border border-white rounded-md p-2">
                                     { coin.image !== "" ?
                                     <img
                                       className="w-8 h-8"

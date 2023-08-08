@@ -30,6 +30,7 @@ import { ethers } from "ethers";
 import Link from "next/link";
 import React, { Fragment, use, useEffect, useState } from "react";
 import { useStore } from "../useStore";
+import { ConfirmingToast } from "../components/Toasts/Confirming";
 
 interface Coin {
   name: string;
@@ -80,6 +81,11 @@ export default function Swap() {
   const [impact, setImpact] = useState(0);
   const [reserve0, setReserve0] = useState(0);
   const [reserve1, setReserve1] = useState(0);
+  const [toastTxnHash, setToastTxnHash] = useState("");
+  const [showToast, setShowToast] = useState("");
+
+
+
   const [coinsForListing, setCoinsForListing] = useState([
     { name: "Gold", symbol: "GLD", address: Gold, image: "/gold.png" } as Coin,
     {
@@ -238,15 +244,17 @@ export default function Swap() {
       signer
     );
 
-    const res = await PairContract.getReserves();
-
-   await RouterContract.swapExactTokensForTokens(
+   const txn = await RouterContract.swapExactTokensForTokens(
         ethers.parseUnits(String(token0Input), "ether"),
         ethers.parseUnits(String(token1Input - (token1Input * Slippage/100)), "ether"),
        0 === token0.address.toLowerCase().localeCompare([token0.address, token1.address].sort(compareHex)[0].toLowerCase()) ? [token0.address, token1.address]: [token1.address, token0.address],
         signerAddress,
         deadline
-      ).then(null, (error) => console.log(error));
+      ).catch((error) => console.log(error));
+      setToastTxnHash(await txn.hash)
+      setShowToast('confirm')
+      await provider.waitForTransaction(await txn.hash).then(async() =>
+      await getBalance(), (err) => console.log(err))
     
   };
 
@@ -434,6 +442,12 @@ export default function Swap() {
   }, [token0Input])
   return (
     <>
+       <ConfirmingToast
+        hash={toastTxnHash}
+        key={showToast}
+        isOpen={showToast}
+        closeToast={(toast: string) => setShowToast(toast)}
+      />
       <Transition appear show={isOpen.show === true} as={Fragment}>
         <Dialog as="div" className="relative z-50" onClose={() => {}}>
           <Transition.Child
@@ -459,7 +473,7 @@ export default function Swap() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-black border border-grey2 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-black border border-grey text-left align-middle shadow-xl transition-all">
                   <div className="p-5">
                     <div className="flex justify-between items-center mb-6">
                       <h1 className="text-white">Select Token</h1>
@@ -475,7 +489,7 @@ export default function Swap() {
                       value={inputVal}
                       onChange={(e) => setInputVal(e.target.value)}
                     ></input>
-                    <div className="flex justify-between flex-wrap mt-4 gap-y-2">
+                        <div className="flex justify-between flex-wrap mt-4 gap-y-2 pb-6 border-b">
                       {coinsForListing?.map((coin: Coin, index: number) => {
                         return (
                           <CoinListButton
@@ -487,7 +501,7 @@ export default function Swap() {
                       })}
                     </div>
                   </div>
-                  <div>
+                  <div className="mb-4 h-[25vh] overflow-y-scroll">
                     {coinsForListing?.map((coin: Coin, index: number) => {
                       return (
                         <CoinListItem

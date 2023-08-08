@@ -110,7 +110,7 @@ const Pool = () => {
       <div className="pt-[10vh]">
         <div className="flex flex-col w-full px-6 pt-5 pb-7 bg-[#00AFE340] rounded-xl">
           <div className="flex flex-col leading-none text-white">
-            <p className="font-bold p-0 m-0">Liquidity provider rewards</p>{" "}
+            <p className="font-bold pb-2 m-0">Liquidity Provider Rewards</p>{" "}
             <br /> Liquidity providers earn a 0.25% fee on all trades
             proportional to their share of the pool. Fees are added to the pool,
             accrue in real time and can be claimed by withdrawing your
@@ -119,12 +119,9 @@ const Pool = () => {
         </div>
       </div>
 
-      <div className="flex flex-row items-center justify-between text-white pt-[3vh]">
+      <div className="flex flex-row items-center justify-between text-white py-[3vh]">
         <span className="text-xl">Your liquidity</span>
         <span className="flex flex-row space-x-[.5vw]">
-          <button className="rounded-lg border-[#00DAAC90] border-[1px]  h-[4vh] px-3 py-2 text-[#00DAAC]">
-            Create a pair
-          </button>
           <Link
             href={"liquidity/add_liquidity/null/null"}
             className="rounded-lg  bg-[#00DAAC90] h-[4vh] px-3 py-2 text-[#00DAAC] "

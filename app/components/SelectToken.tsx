@@ -116,7 +116,7 @@ export default function SelectToken(props:any) {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white border border-grey2 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-xl bg-white border border-grey-200 text-left align-middle shadow-xl transition-all">
                   <div className="p-5">
                     <div className="flex justify-between items-center mb-6">
                       <h1 className="text-white">Select Token</h1>

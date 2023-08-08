@@ -26,6 +26,7 @@ import Link from "next/link";
 import React, { Fragment, use, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/app/useStore";
+import { ConfirmingToast } from "@/app/components/Toasts/Confirming";
 
 interface Coin {
   name: string;
@@ -58,6 +59,8 @@ function RemoveLiquidity() {
   const [display, setDisplay] = useState("simple");
   const [removePercent, setRemovePercentage] = useState(50);
   const [expectedOut, setExpectedOut] = useState(0);
+  const [toastTxnHash, setToastTxnHash] = useState("");
+  const [showToast, setShowToast] = useState("");
   const [percentOfPool, setPercentOfPool] = useState(0);
   const [reserve0, setReserve0] = useState(0);
   const [reserve1, setReserve1] = useState(0);
@@ -133,108 +136,32 @@ function RemoveLiquidity() {
       );
 
       const deadline = Number(Date.now() + Deadline * 60 * 1000);
+      const removalAmount0 = (token0Balance * (removePercent / 100)) 
+      const removalAmount1 = (token1Balance * (removePercent / 100))
+      const Slippage0 =  (removalAmount0 * (Slippage /100))
+      const Slippage1 = (removalAmount1 * (Slippage /100))
 
-      const removalAmount0 =
-        (removePercent / 100) * token0Balance -
-        (removePercent / 100) * token0Balance * Slippage;
-      const removalAmount1 =
-        (removePercent / 100) * token1Balance -
-        (removePercent / 100) * token1Balance * Slippage;
+      const finalRemoval0 = removalAmount0 - Slippage0
+      const finalRemoval1 = removalAmount1 - Slippage1
+      
+      const liquidity = (removePercent /100) * lpHoldings
 
-      let formattedNumber = removalAmount0.toString().replace(".", "");
+      
 
-      const integerLength = Math.floor(removalAmount0).toString().length;
-      const decimalLength = (removalAmount0 - Math.floor(removalAmount0))
-        .toFixed(3)
-        .replace(".", "")
-        .replace(/^0+/, "").length;
-
-      const decimalValue = Number(
-        (removalAmount0 - Math.floor(removalAmount0)).toFixed(3)
-      );
-
-      formattedNumber =
-        integerLength > 1 && decimalValue !== 0
-          ? formattedNumber.padEnd(
-              formattedNumber.length +
-                (18 - (formattedNumber.length - integerLength)),
-              "0"
-            )
-          : decimalLength === 1 || decimalValue === 0
-          ? formattedNumber.padEnd(formattedNumber.length + 18, "0")
-          : formattedNumber.padEnd(
-              formattedNumber.length + (18 - decimalLength),
-              "0"
-            );
-      formattedNumber =
-        formattedNumber.slice(0, -18) + formattedNumber.slice(-18);
-
-      let formattedNumber1 = removalAmount1.toString().replace(".", "");
-
-      const integerLength1 = Math.floor(removalAmount1).toString().length;
-      const decimalLength1 = (removalAmount1 - Math.floor(removalAmount1))
-        .toFixed(3)
-        .replace(".", "")
-        .replace(/^0+/, "").length;
-
-      const decimalValue1 = Number(
-        (removalAmount1 - Math.floor(removalAmount1)).toFixed(3)
-      );
-
-      formattedNumber1 =
-        integerLength1 > 1 && decimalValue1 !== 0
-          ? formattedNumber1.padEnd(
-              formattedNumber1.length +
-                (18 - (formattedNumber1.length - integerLength1)),
-              "0"
-            )
-          : decimalLength1 === 1 || decimalValue1 === 0
-          ? formattedNumber1.padEnd(formattedNumber1.length + 18, "0")
-          : formattedNumber1.padEnd(
-              formattedNumber1.length + (18 - decimalLength1),
-              "0"
-            );
-      formattedNumber1 =
-        formattedNumber1.slice(0, -18) + formattedNumber1.slice(-18);
-
-      const liquidityRemoved = (removePercent / 100) * lpHoldings;
-
-      let formattedNumber2 = liquidityRemoved.toString().replace(".", "");
-
-      const integerLength2 = Math.floor(liquidityRemoved).toString().length;
-      const decimalLength2 = (liquidityRemoved - Math.floor(liquidityRemoved))
-        .toFixed(3)
-        .replace(".", "")
-        .replace(/^0+/, "").length;
-      const decimalValue2 = Number(
-        (liquidityRemoved - Math.floor(liquidityRemoved)).toFixed(3)
-      );
-
-      formattedNumber2 =
-        integerLength2 > 1 && decimalValue2 !== 0
-          ? formattedNumber2.padEnd(
-              formattedNumber2.length +
-                (18 - (formattedNumber2.length - integerLength2)),
-              "0"
-            )
-          : decimalLength2 === 1 || decimalValue2 === 0
-          ? formattedNumber2.padEnd(formattedNumber2.length + 18, "0")
-          : formattedNumber2.padEnd(
-              formattedNumber2.length + (18 - decimalLength2),
-              "0"
-            );
-      formattedNumber2 =
-        formattedNumber2.slice(0, -18) + formattedNumber2.slice(-18);
-
-      await RouterContract.removeLiquidity(
+      const txn = await RouterContract.removeLiquidity(
         token0.address,
         token1.address,
-        ethers.toBigInt(formattedNumber2),
-        ethers.toBigInt(formattedNumber),
-        ethers.toBigInt(formattedNumber1),
+        ethers.parseUnits(String(liquidity), 'ether'),
+        ethers.parseUnits(String(finalRemoval0), 'ether'),
+        ethers.parseUnits(String(finalRemoval1), 'ether'),
         signerAddress,
         deadline
-      ).then(null, (error) => console.log(error));
+      ).catch((error) => console.log(error));
+      setToastTxnHash(await txn.hash)
+      setShowToast('confirm')
+      await provider.waitForTransaction(await txn.hash).then(async() =>
+      await getBalance(token0.address, token1.address), (err) => console.log(err))
+
 
       // wasAdded is a boolean. Like any RPC method, an error may be thrown.
       // async() => {const wasAdded = await ethereum.request({
@@ -511,7 +438,7 @@ function RemoveLiquidity() {
     const token0Pth = path[3];
     const token1Pth = path[4];
     getBalance(token0Pth, token1Pth);
-  }, [token0, token1]);
+  }, [token0.address, token1.address]);
 
   useEffect(() => {
     if (token0.address !== "" && token1.address !== "") {
@@ -519,8 +446,17 @@ function RemoveLiquidity() {
     }
   }, [needsApproval, token0.address, token1.address, removePercent]);
 
+  useEffect(() => {
+  }, [token0Balance, token1Balance]);
+
   return (
     <>
+      <ConfirmingToast
+        hash={toastTxnHash}
+        key={showToast}
+        isOpen={showToast}
+        closeToast={(toast: string) => setShowToast(toast)}
+      />
       <div className="flex flex-col md:max-w-[30vw] mx-auto bg-[#00AFE340] rounded-3xl mt-[3vh]">
         <div className="flex flex-row items-center justify-between p-[5%]">
           <Link href={"/liquidity"}>
@@ -606,7 +542,7 @@ function RemoveLiquidity() {
           <div className="border-[1px] border-[#86C7DB25] rounded-xl mx-[3%] text-white ">
             <div className="border-b-[1px] border-[#86C7DB25] rounded-xl  p-[5%] text-white ">
               <span className="flex flex-row text-2xl justify-between items-center">
-                <p className="">{token0Balance}</p>
+                <p className="">{token0Balance.toFixed(3)}</p>
                 <span className="flex flex-row items-center justify-center">
                   <QuestionMarkCircleIcon
                     className="w-[2.5vh] h-[2.5vh] mr-[5%]"
@@ -618,7 +554,7 @@ function RemoveLiquidity() {
               </span>
 
               <span className="flex flex-row justify-between items-center text-2xl">
-                <p className="">{token1Balance}</p>
+                <p className="">{token1Balance.toFixed(3)}</p>
                 <span className="flex flex-row items-center justify-center">
                   <QuestionMarkCircleIcon
                     className="w-[2.5vh] h-[2.5vh] mr-[5%]"
@@ -684,7 +620,7 @@ function RemoveLiquidity() {
             <p>
               {token0.symbol} / {token1.symbol}
             </p>
-            <p> {lpHoldings < .001 ? 0 : lpHoldings}</p>
+            <p> {lpHoldings < .001 ? 0 : lpHoldings.toFixed(3)}</p>
           </span>
 
           <span className="flex flex-row justify-between items-center">
@@ -694,12 +630,12 @@ function RemoveLiquidity() {
 
           <span className="flex flex-row justify-between items-center">
             <p>{token0.symbol}:</p>
-            <p>{token0Balance  < .01 ? 0 : token0Balance}</p>
+            <p>{token0Balance  < .01 ? 0 : token0Balance.toFixed(3)}</p>
           </span>
 
           <span className="flex flex-row justify-between items-center">
             <p>{token1.symbol}:</p>
-            <p>{token1Balance < .1 ? 0 : token1Balance}</p>
+            <p>{token1Balance < .1 ? 0 : token1Balance.toFixed(3)}</p>
           </span>
         </div>
       </div>

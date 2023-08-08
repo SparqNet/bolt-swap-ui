@@ -22,7 +22,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { ethers } from "ethers";
 import Link from "next/link";
-import React, { Fragment, use, useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 
 interface Coin {
   name: string;
@@ -185,7 +185,7 @@ export default function ImportLiquidity() {
                       value={inputVal}
                       onChange={(e) => setInputVal(e.target.value)}
                     ></input>
-                    <div className="flex justify-between flex-wrap mt-4 gap-y-2">
+                    <div className="flex justify-between flex-wrap mt-4 gap-y-2 pb-6 border-b">
                       {coinsForListing?.map((coin: Coin, index: number) => {
                         return (
                           <CoinListButton
@@ -197,7 +197,7 @@ export default function ImportLiquidity() {
                       })}
                     </div>
                   </div>
-                  <div>
+                  <div className="mb-4 h-[25vh] overflow-y-scroll">
                     {coinsForListing?.map((coin: Coin, index: number) => {
                       return (
                         <CoinListItem
