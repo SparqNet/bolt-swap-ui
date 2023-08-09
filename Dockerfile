@@ -10,9 +10,6 @@ COPY package.json yarn.lock ./
 # Install dependencies
 RUN yarn install
 
-# If you have additional global installations, add them here. 
-# For now, I'm assuming you don't, so I'm not adding any.
-
 # Copy the rest of the application files
 COPY . .
 
