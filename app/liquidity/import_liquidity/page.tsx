@@ -10,6 +10,7 @@ import {
   Gold,
   RouterAddress,
   Silver,
+  WrapperAddress,
   factory_address,
 } from "@/utils/constants";
 import { Dialog, Transition } from "@headlessui/react";
@@ -36,14 +37,14 @@ export default function ImportLiquidity() {
   const [token0, setToken0] = useState({
     name: "Sparq",
     symbol: "SPRQ",
-    address: "0x4aFf1a752E49017FC486E627426F887DDf948B2F",
+    address: "",
     image: "/logo.svg",
   } as Coin);
   const [token1, setToken1] = useState({
-    name: "Sparq",
-    symbol: "SPRQ",
-    address: "0x000000000000000002",
-    image: "/logo.svg",
+    name: "",
+    symbol: "",
+    address: "",
+    image: "",
   } as Coin);
   const [LPBalance, setLPBalance] = useState(0);
   const [coinsForListing, setCoinsForListing] = useState([
@@ -54,6 +55,18 @@ export default function ImportLiquidity() {
       address: Silver,
       image: "/silver.png",
     } as Coin,
+    {
+      name:"Sparq",
+      symbol: "SPRQ",
+      address: "",
+      image: "/logo.svg"
+    } as Coin,
+    {
+      name:"Wrapped Sparq",
+      symbol: "WSPRQ",
+      address: WrapperAddress,
+      image: "/logo.svg"
+    } as Coin
   ]);
   const [inputVal, setInputVal] = useState("");
   const [isOpen, setIsOpen] = useState({ show: false, tokenNum: -1 });
@@ -78,7 +91,66 @@ export default function ImportLiquidity() {
       setIsOpen({ show: false, tokenNum: 1 });
     }
   };
+  const getBalanceNative = async () => {
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const signerAddress = await signer.getAddress();
 
+      const contract = new ethers.Contract(
+        factory_address,
+        FactoryAbi,
+        signer
+      );
+      const wrapperSlot = token0.address === "" ? WrapperAddress: token0.address
+      const tokenSlot = token1.address === "" ? WrapperAddress: token1.address
+
+      const pair = await contract.getPair(wrapperSlot, tokenSlot);
+       console.log(pair)
+      const tokenContract = new ethers.Contract(pair, PairAbi, signer);
+
+      const supply = Number(
+        ethers.formatEther(await tokenContract.totalSupply())
+      );
+      const balance = Number(
+        ethers.formatEther(await tokenContract.balanceOf(signerAddress))
+      );
+
+      const reserves = await tokenContract.getReserves();
+      const shareOfPool = balance / supply;
+      setLPBalance(Math.floor(balance));
+      setPoolShare(shareOfPool * 10 ** 2);
+      setReserveSplits({
+        token0: Number(ethers.formatEther(reserves[0])) * shareOfPool,
+        token1: Number(ethers.formatEther(reserves[1])) * shareOfPool,
+      });
+
+
+      if (localStorage.getItem("addedLPTokens") !== null) {
+        const prevEntry = localStorage.getItem("addedLPTokens")
+        const prevObject = JSON.parse(prevEntry!)
+        for (let i = 0; i < Object.keys(prevObject).length; i++) {
+          if (prevObject[i] === pair) {
+            return;
+          }
+        }
+        const nextIndex = Object.keys(prevObject).length
+        prevObject[nextIndex] = pair
+        const updated = JSON.stringify(prevObject)
+        localStorage.setItem("addedLPTokens", updated)
+      }
+    
+      if (localStorage.getItem("addedLPTokens") === null) {
+      const addedLPTokens = JSON.stringify({0:pair})
+      localStorage.setItem("addedLPTokens", addedLPTokens)
+      }
+
+
+    } catch (error) {
+      console.log(error);
+    }
+
+  }
   const getBalance = async () => {
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
@@ -100,7 +172,6 @@ export default function ImportLiquidity() {
         ethers.formatEther(await tokenContract.balanceOf(signerAddress))
       );
 
-      console.log(balance)
       const reserves = await tokenContract.getReserves();
       const shareOfPool = balance / supply;
       setLPBalance(Math.floor(balance));
@@ -119,7 +190,7 @@ export default function ImportLiquidity() {
             return;
           }
         }
-        const nextIndex = Object.keys(prevObject).length + 1
+        const nextIndex = Object.keys(prevObject).length
         prevObject[nextIndex] = pair
         const updated = JSON.stringify(prevObject)
         localStorage.setItem("addedLPTokens", updated)
@@ -138,9 +209,13 @@ export default function ImportLiquidity() {
 
   useEffect(() => {
     if (isSelected) {
+      if (token0.address === "" || token1.address === "") {
+        getBalanceNative();
+        return;
+      }
       getBalance();
     }
-  }, [token0, token1]);
+  }, [token0.address, token1.address]);
 
   return (
     <>

@@ -39,6 +39,7 @@ const Pool = () => {
    const getLiquidity = async () => {
     try {
       const savedPairs = JSON.parse(localStorage.getItem("addedLPTokens")!);
+      console.log(savedPairs, savedPairs[2])
       const addedPairs: Pair[] = [];
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
@@ -110,11 +111,8 @@ const Pool = () => {
       <div className="pt-[10vh]">
         <div className="flex flex-col w-full px-6 pt-5 pb-7 bg-[#00AFE340] rounded-xl">
           <div className="flex flex-col leading-none text-white">
-            <p className="font-bold pb-2 m-0">Liquidity Provider Rewards</p>{" "}
-            <br /> Liquidity providers earn a 0.25% fee on all trades
-            proportional to their share of the pool. Fees are added to the pool,
-            accrue in real time and can be claimed by withdrawing your
-            liquidity.
+            <p className="font-bold pb-2 m-0">Liquidity Provision</p>{" "}
+            <br /> Use this page to manage your positions and adjust them by adding or removing liquidity.
           </div>
         </div>
       </div>

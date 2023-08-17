@@ -14,9 +14,11 @@ export const PAIR_LP = "0x4aFf1a752E49017FC486E627426F887DDf948B2F"
 
 //Router:
 export const RouterAddress = "0x1073652AA8272A19EBF70832d4E3861aC1664F1A"
+export const FaucetAddress = "0xfb207018effd6bed21fd8ef30c82295ff14ee187"
 
 //WSPARQ:
 export const WrapperAddress = "0x357872F740253583bAadBd7fAd7a192E0f3e22d9"
+export const ContractManagerAddress = "0x0001cb47ea6d8b55fe44fdd6b1bdb579efb43e61"
 
 
 export const compareHex = (a:string, b:string) => {

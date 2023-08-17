@@ -4,11 +4,15 @@ import React, { Fragment, use, useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { WrapperAddress } from "@/utils/constants";
 import NativeWrapper from "@/abis/NativeWrapper.json";
+import { ConfirmingToast } from "@/app/components/Toasts/Confirming";
 
 export default function Wrap() {
   const [WrapperInput, setWrapperInput] = useState("0");
   const [needsApproval, setNeedsApproval] = useState(false);
   const [wrappedBalance, setWrappedBalance] = useState("0");
+  const [showToast, setShowToast] = useState("")
+  const [toastTxnHash, setToastTxnHash] = useState("")
+
 
 
   const wrap = async () => {
@@ -21,12 +25,14 @@ export default function Wrap() {
       signer
     );
 
-    await wrapperContract
+    const txn = await wrapperContract
       .deposit({ value: ethers.parseUnits(String(WrapperInput), "ether") })
       .catch((err) => {
         console.log(err);
       })
-      .finally(async () => await balance());
+      setToastTxnHash(await txn.hash)
+      setShowToast('confirm')
+      await provider.waitForTransaction(txn.hash).finally((async () => await balance()))
   };
 
   const balance = async () => {
@@ -51,6 +57,14 @@ export default function Wrap() {
     balance();
   }, []);
   return (
+    <>
+     <ConfirmingToast
+        hash={toastTxnHash}
+        key={showToast}
+        isOpen={showToast}
+        closeToast={(toast: string) => setShowToast(toast)}
+      />
+
     <div className="flex flex-col box-border md:max-w-[20vw] mx-auto bg-[#00AFE340] rounded-3xl mt-[10vh] p-6">
       <span className="flex flex-col text-white mt-[2vh]">
         <span className="flex flex-row items-center text-white">
@@ -84,5 +98,6 @@ export default function Wrap() {
         </button>
       )}
     </div>
+    </>
   );
 }
