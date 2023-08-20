@@ -37,10 +37,6 @@ export default function RootLayout({
   wallet: { address: string; nativeBalance: string };
 }) {
   const path = usePathname();
-  const hasConnected =
-    localStorage.getItem("hasConnected") === null
-      ? false
-      : Boolean(localStorage.getItem("hasConnected"));
   const [wallet, setWallet] = useState<
     undefined | { address: string; nativeBalance: string }
   >(undefined);
@@ -208,6 +204,10 @@ export default function RootLayout({
   }
 
   useEffect(() => {
+    const hasConnected =
+    localStorage.getItem("hasConnected") === null
+      ? false
+      : Boolean(localStorage.getItem("hasConnected"));
     if (hasConnected) {
       connectWallet()
         .then(() => checkNetwork())
