@@ -50,7 +50,7 @@ export default function AddLiquidity() {
     {
       name: "Sparq",
       symbol:"SPRQ",
-      address: "",
+      address: "undefined",
       image: "/logo.svg"
     } as Coin,
     {
@@ -63,16 +63,16 @@ export default function AddLiquidity() {
 
   const [isSelected, setSelected] = useState(false);
   const [token0, setToken0] = useState({
-    name: "WSPARQ",
-    symbol: "WSPRQ",
-    address: WrapperAddress,
+    name: "SPARQ",
+    symbol: "SPRQ",
+    address: "undefined",
     image: "/logo.svg",
   } as Coin);
   const [token1, setToken1] = useState({
-    name: "Sparq",
-    symbol: "SPRQ",
+    name: "",
+    symbol: "",
     address: "",
-    image: "/logo.svg",
+    image: "",
   } as Coin);
   const [Slippage, Network, Deadline] = useStore((state: any) => [
     state.Slippage,
@@ -105,7 +105,7 @@ export default function AddLiquidity() {
       let token0Contract;
       let token1Contract;
 
-      if (token0.address != WrapperAddress && token1.address != WrapperAddress && token0.name !== "Sparq" || token1.name !== "Sparq") {
+      if (token0.address != WrapperAddress && token1.address != WrapperAddress && token0.address !== "undefined" || token1.address !== "undefined") {
         token0Contract = new ethers.Contract(token0.address as string, ERC20, signer);
         token1Contract = new ethers.Contract(token1.address as string, ERC20, signer);
       }
@@ -143,6 +143,8 @@ export default function AddLiquidity() {
         Number(Number(ethers.formatEther(token1Bal)).toFixed(3))
       );
 
+      console.log(token0Allowance, token1Allowance)
+
       if (
         Number(ethers.formatEther(token0Allowance)) >= token0Input &&
         Number(ethers.formatEther(token1Allowance)) < token1Input
@@ -150,6 +152,7 @@ export default function AddLiquidity() {
         setNeedsApproval(true);
         return;
       }
+
 
       if (
         Number(ethers.formatEther(token0Allowance)) < token0Input &&
@@ -183,7 +186,7 @@ export default function AddLiquidity() {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const signerAddress = await signer.getAddress();
-      if (token0.address === "") {
+      if (token0.address === "undefined") {
         const token1Contract = new ethers.Contract(token1.address, ERC20, signer);
         const token1Allowance = await token1Contract!.allowance(
           signerAddress,
@@ -239,13 +242,14 @@ export default function AddLiquidity() {
 
       const deadline = Number(Date.now() + Deadline * 60 * 1000);
   
-      if (token0.address != "" && token1.address != "") {
-     
+      if (token0.address != "undefined" && token1.address != "undefined") {
+        const tokenIn = [token0.address, token1.address].sort(compareHex)[0] === token0.address
+        const tokenOut =  [token0.address, token1.address].sort(compareHex)[1] === token1.address
        const supply = await RouterContract.addLiquidity(
         [token0.address, token1.address].sort(compareHex)[0],
         [token0.address, token1.address].sort(compareHex)[1],
-        ethers.parseUnits(String(token0Input), "ether"),
-        ethers.parseUnits(String(token1Input), "ether"),
+        ethers.parseUnits(String(tokenIn ? token0Input: token1Input), "ether"),
+        ethers.parseUnits(String(tokenOut ? token1Input: token0Input), "ether"),
         ethers.parseUnits(
           String(token0Input - token0Input * (Slippage / 100)),
           "ether"
@@ -265,9 +269,9 @@ export default function AddLiquidity() {
       return;
       }
 
-      const TOKEN_SLOT = token0.address === ""  ? token1.address: token0.address
-      const TOKEN_INPUT = token0.address === "" ? token1Input: token0Input
-      const NATIVE_INPUT = token0.address === "" ? token0Input: token1Input
+      const TOKEN_SLOT = token0.address === "undefined"  ? token1.address: token0.address
+      const TOKEN_INPUT = token0.address === "undefined" ? token1Input: token0Input
+      const NATIVE_INPUT = token0.address === "undefined" ? token0Input: token1Input
       console.log(ethers.parseUnits(String(TOKEN_INPUT), "ether"))
       const supply = await RouterContract.addLiquidityNative(
         TOKEN_SLOT,
@@ -334,7 +338,6 @@ export default function AddLiquidity() {
         token1Contract = new ethers.Contract(token1.address, ERC20, signer);
       }
       if (token1.address === WrapperAddress) {
-        console.log(token1.address)
         token0Contract = new ethers.Contract(token0.address, ERC20, signer);
         token1Contract = new ethers.Contract(token1.address, NativeWrapper, signer);
       }
@@ -437,7 +440,7 @@ export default function AddLiquidity() {
     const signer = await provider.getSigner();
     const signerAddress = await signer.getAddress();
     let caughtError:boolean = false
-    if (token0.address === "") {
+    if (token0.address === "undefined") {
       const token1Contract = new ethers.Contract(token1.address, ERC20, signer);
       const token1Allowance = await token1Contract!.allowance(
         signerAddress,
@@ -460,7 +463,7 @@ export default function AddLiquidity() {
           });
         }
     }
-    if (token1.address === "") {
+    if (token1.address === "undefined") {
       const token0Contract = new ethers.Contract(token0.address, ERC20, signer);
       const token0Allowance = await token0Contract!.allowance(
         signerAddress,
@@ -516,7 +519,10 @@ export default function AddLiquidity() {
         signer
       );
 
-      const pairAddress = await factoryContract.getPair(token0, token1);
+      const tokenIn =  token0 === "undefined" ? WrapperAddress: token0
+      const tokenOut =  token1 === "undefined" ? WrapperAddress: token1
+      
+      const pairAddress = await factoryContract.getPair(tokenIn, tokenOut);
       if (pairAddress === "0x0000000000000000000000000000000000000000") {
         setLPTokenExists(false);
         return;
@@ -559,7 +565,7 @@ export default function AddLiquidity() {
       // setLPHoldings(Number(ethers.formatEther(pairBalance)));
       setPercentOfPool(holdings * 100);
 
-      const token0Contract = new ethers.Contract(token0, ERC20, signer);
+      const token0Contract = new ethers.Contract(tokenIn, ERC20, signer);
 
       const symbol0 = await token0Contract
         .symbol()
@@ -575,7 +581,7 @@ export default function AddLiquidity() {
         address: token0,
       } as Coin);
 
-      const token1Contract = new ethers.Contract(token1, ERC20, signer);
+      const token1Contract = new ethers.Contract(tokenOut, ERC20, signer);
 
       const symbol1 = await token1Contract
         .symbol()
@@ -692,22 +698,66 @@ export default function AddLiquidity() {
     }
   };
 
+
+ const calcOutAmount = async () => {
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const signerAddress = await signer.getAddress();
+
+
+    const FactoryContract = new ethers.Contract(
+      factory_address,
+      FactoryAbi,
+      signer
+    );
+
+    const tokenIn =  token0.address === "undefined" ? WrapperAddress: token0.address
+    const tokenOut =  token1.address === "undefined" ? WrapperAddress: token1.address
+
+    const doesLPTokenExist = await FactoryContract.getPair(
+      tokenIn,
+      tokenOut
+    );
+    
+    if(doesLPTokenExist === "0x0000000000000000000000000000000000000000") {
+      return
+    }
+    const PairContract = new ethers.Contract(
+      await doesLPTokenExist,
+      PairAbi,
+      signer
+    );
+
+    const res = await PairContract.getReserves();
+
+    const reserve0:bigint = res["reserve0"]
+    const reserve1:bigint = res["reserve1"]
+    
+   
+    const token0InputAmount =  ethers.parseUnits(String(token0Input), "ether")
+    const numerator = token0InputAmount * ethers.toBigInt(1000) * (0 === tokenIn.toLowerCase().localeCompare([tokenIn, tokenOut].sort(compareHex)[0].toLowerCase()) ?  reserve1 : reserve0)
+    const denominator = (0 === tokenIn.toLowerCase().localeCompare([tokenIn, tokenOut].sort(compareHex)[0].toLowerCase()) ? reserve0 : reserve1) * ethers.toBigInt(1000)
+
+    setToken1Input(Number(ethers.formatEther(numerator/ denominator)))
+    const toke1 = document.getElementById('token1Input') as HTMLInputElement;
+    toke1.value = Number(ethers.formatEther(numerator/ denominator)).toFixed(3)
+
+ }
+
+
   const path = usePathname().split("/");
 
   useEffect(() => {
     const token0Pth = path[3];
     const token1Pth = path[4];
     if (token0Pth === "null" && token1Pth === "null") {
-      if (token0.address !== undefined && token1.address !== undefined) {
-        console.log("entered")
+      if (isSelected) {
         getBalance(token0.address, token1.address);
+        return;
       }
-      return;
     } else {
-      if (token0.address !== undefined && token1.address !== undefined) {
-        console.log("entered")
       getBalance(token0Pth, token1Pth);
-      }
     }
   }, [token0.address, token1.address]);
 
@@ -724,13 +774,19 @@ export default function AddLiquidity() {
 
   useEffect(() => {
     if (isSelected && (token0Input >= 0 || token1Input >= 0)) {
-      if (token0.address === "" || token1.address === "") {
+      if (token0.address === "undefined" || token1.address === "undefined") {
         checkApprovalNative();
         return;
       }
       checkApproval();
     }
   }, [isSelected, token0Input, token1Input, token1.address, token0.address]);
+
+  useEffect(()=> {
+    if (isSelected === true) {
+    calcOutAmount()
+    }
+  }, [token0Input])
 
   return (
     <>
@@ -844,7 +900,7 @@ export default function AddLiquidity() {
                 // calculateLPStats(0, e);
                 setToken0Input(Number(e.target.value));
               }}
-              id="token0"
+              id="token0Input"
               type="number"
               className="text-3xl bg-transparent border-transparent w-1/2 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="0.0"
@@ -887,7 +943,7 @@ export default function AddLiquidity() {
                   // calculateLPStats(1, e);
                   setToken1Input(Number(e.target.value));
                 }}
-                id="token1"
+                id="token1Input"
                 type="number"
                 className="text-3xl bg-transparent border-transparent w-1/2 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.0"
@@ -915,7 +971,7 @@ export default function AddLiquidity() {
             <div className="flex flex-row justify-between items-end py-[.5vh]">
               <input
                 disabled={true}
-                id="token1"
+                id="token1Input"
                 type="number"
                 className="text-3xl bg-transparent border-transparent w-1/2 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.0"
@@ -976,7 +1032,7 @@ export default function AddLiquidity() {
         ) : needsApproval === true ? (
           <button
             onClick={() => {
-              if(token0.address === "" || token1.address === "") {
+              if(token0.address === "undefined" || token1.address === "undefined") {
                 approveForNative()
                 return;
               }
