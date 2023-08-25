@@ -119,19 +119,26 @@ export default function RootLayout({
         try {
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
-            params: [{ chainId: 'C4C4C0' }],
+            params: [{ chainId: '0xC4C4C0' }],
           });
         } catch (switchError:any) {
           if (switchError.code === 4902) {
             setNetwork("Wrong Network");
             try {
+              const number = 808080;
+              const hexadecimalString = '0x' + number.toString(16).toLowerCase()
               await window.ethereum.request({
                 method: 'wallet_addEthereumChain',
                 params: [
                   {
-                    chainId: 'C4C4C0',
+                    chainId: hexadecimalString,
                     chainName: 'Bolt-Swap',
                     rpcUrls: ['https://dex-demo-api.sparq.network'],
+                    nativeCurrency: {
+                      name: "SPARQ",
+                      symbol: "SPRQ",
+                      decimals: 18,
+                    },
                   },
                 ],
               });
