@@ -115,17 +115,33 @@ export default function RootLayout({
   }
 
   const checkNetwork = async () => {
-    try {
       if (window.ethereum) {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const network = await provider.getNetwork();
-        if (Number(network.chainId) !== 808080) {
-          setNetwork("Wrong Network");
-        } else {
-          setNetwork("Orbiter");
-          updateNetwork("Orbiter");
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: '808080' }],
+          });
+        } catch (switchError:any) {
+          if (switchError.code === 4902) {
+            setNetwork("Wrong Network");
+            try {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [
+                  {
+                    chainId: '808080',
+                    chainName: 'Bolt-Swap',
+                    rpcUrls: ['https://dex-demo-api.sparq.network'],
+                  },
+                ],
+              });
+              setNetwork("Orbiter");
+              updateNetwork("Orbiter");
+            } catch (addError) {
+              console.log(addError)
+            }
+          }
         }
-
         const currentNetwork = window.ethereum;
         currentNetwork.on("chainChanged", (networkId: number) => {
           setNetworkId(networkId);
@@ -138,9 +154,6 @@ export default function RootLayout({
           }
         });
       }
-    } catch (error) {
-      console.log(error);
-    }
   };
 
   const handleDivClick = (event:any) => {
