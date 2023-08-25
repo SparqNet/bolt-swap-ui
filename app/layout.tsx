@@ -119,7 +119,7 @@ export default function RootLayout({
         try {
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
-            params: [{ chainId: '808080' }],
+            params: [{ chainId: 'C4C4C0' }],
           });
         } catch (switchError:any) {
           if (switchError.code === 4902) {
@@ -129,7 +129,7 @@ export default function RootLayout({
                 method: 'wallet_addEthereumChain',
                 params: [
                   {
-                    chainId: '808080',
+                    chainId: 'C4C4C0',
                     chainName: 'Bolt-Swap',
                     rpcUrls: ['https://dex-demo-api.sparq.network'],
                   },
