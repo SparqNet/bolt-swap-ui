@@ -6,7 +6,7 @@ import ERC20 from "@/abis/ERC20.json";
 import RouterAbi from "@/abis/Router.json";
 import FactoryAbi from "@/abis/Factory.json";
 import PairAbi from "@/abis/Pair.json";
-import NativeWrapper from "@/abis/NativeWrapper.json"
+import NativeWrapper from "@/abis/NativeWrapper.json";
 import {
   Gold,
   RouterAddress,
@@ -49,16 +49,16 @@ export default function AddLiquidity() {
     } as Coin,
     {
       name: "Sparq",
-      symbol:"SPRQ",
+      symbol: "SPRQ",
       address: "undefined",
-      image: "/logo.svg"
+      image: "/logo.svg",
     } as Coin,
     {
       name: "Wrapped Sparq",
       symbol: "WSPRQ",
       address: WrapperAddress,
       image: "/logo.svg",
-    } as Coin
+    } as Coin,
   ];
 
   const [isSelected, setSelected] = useState(false);
@@ -105,17 +105,46 @@ export default function AddLiquidity() {
       let token0Contract;
       let token1Contract;
 
-      if (token0.address != WrapperAddress && token1.address != WrapperAddress && token0.address !== "undefined" || token1.address !== "undefined") {
-        token0Contract = new ethers.Contract(token0.address as string, ERC20, signer);
-        token1Contract = new ethers.Contract(token1.address as string, ERC20, signer);
+      if (
+        (token0.address != WrapperAddress &&
+          token1.address != WrapperAddress &&
+          token0.address !== "undefined") ||
+        token1.address !== "undefined"
+      ) {
+        token0Contract = new ethers.Contract(
+          token0.address as string,
+          ERC20,
+          signer
+        );
+        token1Contract = new ethers.Contract(
+          token1.address as string,
+          ERC20,
+          signer
+        );
       }
       if (token0.address === WrapperAddress) {
-        token0Contract = new ethers.Contract(token0.address, NativeWrapper, signer);
-        token1Contract = new ethers.Contract(token1.address as string, ERC20, signer);
+        token0Contract = new ethers.Contract(
+          token0.address,
+          NativeWrapper,
+          signer
+        );
+        token1Contract = new ethers.Contract(
+          token1.address as string,
+          ERC20,
+          signer
+        );
       }
       if (token1.address === WrapperAddress) {
-        token0Contract = new ethers.Contract(token0.address as string, ERC20, signer);
-        token1Contract = new ethers.Contract(token1.address, NativeWrapper, signer);
+        token0Contract = new ethers.Contract(
+          token0.address as string,
+          ERC20,
+          signer
+        );
+        token1Contract = new ethers.Contract(
+          token1.address,
+          NativeWrapper,
+          signer
+        );
       }
 
       const token0Bal = await token0Contract!
@@ -135,7 +164,6 @@ export default function AddLiquidity() {
         RouterAddress
       );
 
-     
       setToken0Balance(
         Number(Number(ethers.formatEther(token0Bal)).toFixed(3))
       );
@@ -143,7 +171,7 @@ export default function AddLiquidity() {
         Number(Number(ethers.formatEther(token1Bal)).toFixed(3))
       );
 
-      console.log(token0Allowance, token1Allowance)
+      console.log(token0Allowance, token1Allowance);
 
       if (
         Number(ethers.formatEther(token0Allowance)) >= token0Input &&
@@ -152,7 +180,6 @@ export default function AddLiquidity() {
         setNeedsApproval(true);
         return;
       }
-
 
       if (
         Number(ethers.formatEther(token0Allowance)) < token0Input &&
@@ -183,44 +210,44 @@ export default function AddLiquidity() {
   };
 
   const checkApprovalNative = async () => {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const signerAddress = await signer.getAddress();
-      if (token0.address === "undefined") {
-        const token1Contract = new ethers.Contract(token1.address, ERC20, signer);
-        const token1Allowance = await token1Contract!.allowance(
-          signerAddress,
-          RouterAddress
-        );
-        const token1Balance = await token1Contract.balanceOf(signerAddress)
-        setToken0Balance(Number(ethers.formatEther(await provider.getBalance(signerAddress))))
-        setToken1Balance(Number(ethers.formatEther(token1Balance)))
-          if ( Number(ethers.formatEther(token1Allowance)) < token1Input) {
-                setNeedsApproval(true);
-              }
-              else {
-                setNeedsApproval(false)
-              }
-            }
-      if (token1.address === "") {
-        const token0Contract = new ethers.Contract(token0.address, ERC20, signer);
-        const token0Allowance = await token0Contract!.allowance(
-          signerAddress,
-          RouterAddress
-        );
-        const token0Balance = await token0Contract.balanceOf(signerAddress)
-        setToken0Balance(Number(ethers.formatEther(token0Balance)))
-        setToken1Balance(Number(ethers.formatEther(await provider.getBalance(signerAddress))))
-        if (
-          Number(ethers.formatEther(token0Allowance)) < token0Input) {
-              setNeedsApproval(true);
-            }
-            else {
-              setNeedsApproval(false)
-            }
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const signerAddress = await signer.getAddress();
+    if (token0.address === "undefined") {
+      const token1Contract = new ethers.Contract(token1.address, ERC20, signer);
+      const token1Allowance = await token1Contract!.allowance(
+        signerAddress,
+        RouterAddress
+      );
+      const token1Balance = await token1Contract.balanceOf(signerAddress);
+      setToken0Balance(
+        Number(ethers.formatEther(await provider.getBalance(signerAddress)))
+      );
+      setToken1Balance(Number(ethers.formatEther(token1Balance)));
+      if (Number(ethers.formatEther(token1Allowance)) < token1Input) {
+        setNeedsApproval(true);
+      } else {
+        setNeedsApproval(false);
       }
-  
     }
+    if (token1.address === "") {
+      const token0Contract = new ethers.Contract(token0.address, ERC20, signer);
+      const token0Allowance = await token0Contract!.allowance(
+        signerAddress,
+        RouterAddress
+      );
+      const token0Balance = await token0Contract.balanceOf(signerAddress);
+      setToken0Balance(Number(ethers.formatEther(token0Balance)));
+      setToken1Balance(
+        Number(ethers.formatEther(await provider.getBalance(signerAddress)))
+      );
+      if (Number(ethers.formatEther(token0Allowance)) < token0Input) {
+        setNeedsApproval(true);
+      } else {
+        setNeedsApproval(false);
+      }
+    }
+  };
 
   const supplyLiquidity = async () => {
     try {
@@ -241,38 +268,53 @@ export default function AddLiquidity() {
       );
 
       const deadline = Number(Date.now() + Deadline * 60 * 1000);
-  
-      if (token0.address != "undefined" && token1.address != "undefined") {
-        const tokenIn = [token0.address, token1.address].sort(compareHex)[0] === token0.address
-        const tokenOut =  [token0.address, token1.address].sort(compareHex)[1] === token1.address
-       const supply = await RouterContract.addLiquidity(
-        [token0.address, token1.address].sort(compareHex)[0],
-        [token0.address, token1.address].sort(compareHex)[1],
-        ethers.parseUnits(String(tokenIn ? token0Input: token1Input), "ether"),
-        ethers.parseUnits(String(tokenOut ? token1Input: token0Input), "ether"),
-        ethers.parseUnits(
-          String(token0Input - token0Input * (Slippage / 100)),
-          "ether"
-        ),
-        ethers.parseUnits(
-          String(token1Input - token1Input * (Slippage / 100)),
-          "ether"
-        ),
-        signerAddress,
-        deadline
-      );
 
-      setToastTxnHash(await supply.hash);
-      setShowToast("confirm");
-      await provider.waitForTransaction(await supply.hash).then(async() =>
-      await checkApproval(), (err) => console.log(err));
-      return;
+      if (token0.address != "undefined" && token1.address != "undefined") {
+        const tokenIn =
+          [token0.address, token1.address].sort(compareHex)[0] ===
+          token0.address;
+        const tokenOut =
+          [token0.address, token1.address].sort(compareHex)[1] ===
+          token1.address;
+        const supply = await RouterContract.addLiquidity(
+          [token0.address, token1.address].sort(compareHex)[0],
+          [token0.address, token1.address].sort(compareHex)[1],
+          ethers.parseUnits(
+            String(tokenIn ? token0Input : token1Input),
+            "ether"
+          ),
+          ethers.parseUnits(
+            String(tokenOut ? token1Input : token0Input),
+            "ether"
+          ),
+          ethers.parseUnits(
+            String(token0Input - token0Input * (Slippage / 100)),
+            "ether"
+          ),
+          ethers.parseUnits(
+            String(token1Input - token1Input * (Slippage / 100)),
+            "ether"
+          ),
+          signerAddress,
+          deadline
+        );
+
+        setToastTxnHash(await supply.hash);
+        setShowToast("confirm");
+        await provider.waitForTransaction(await supply.hash).then(
+          async () => await checkApproval(),
+          (err) => console.log(err)
+        );
+        return;
       }
 
-      const TOKEN_SLOT = token0.address === "undefined"  ? token1.address: token0.address
-      const TOKEN_INPUT = token0.address === "undefined" ? token1Input: token0Input
-      const NATIVE_INPUT = token0.address === "undefined" ? token0Input: token1Input
-      console.log(ethers.parseUnits(String(TOKEN_INPUT), "ether"))
+      const TOKEN_SLOT =
+        token0.address === "undefined" ? token1.address : token0.address;
+      const TOKEN_INPUT =
+        token0.address === "undefined" ? token1Input : token0Input;
+      const NATIVE_INPUT =
+        token0.address === "undefined" ? token0Input : token1Input;
+      console.log(ethers.parseUnits(String(TOKEN_INPUT), "ether"));
       const supply = await RouterContract.addLiquidityNative(
         TOKEN_SLOT,
         ethers.parseUnits(String(TOKEN_INPUT), "ether"),
@@ -286,28 +328,16 @@ export default function AddLiquidity() {
         ),
         signerAddress,
         deadline,
-        {value: ethers.parseUnits(String(NATIVE_INPUT), "ether")}
+        { value: ethers.parseUnits(String(NATIVE_INPUT), "ether") }
       );
 
       setToastTxnHash(await supply.hash);
       setShowToast("confirm");
-      await provider.waitForTransaction(await supply.hash).then(async() =>
-      await checkApprovalNative(), (err) => console.log(err));
+      await provider.waitForTransaction(await supply.hash).then(
+        async () => await checkApprovalNative(),
+        (err) => console.log(err)
+      );
       return;
-
-      // wasAdded is a boolean. Like any RPC method, an error may be thrown.
-      // async() => {const wasAdded = await ethereum.request({
-      //   method: 'wallet_watchAsset',
-      //   params: {
-      //     type: 'ERC20', // Initially only supports ERC20, but eventually more!
-      //     options: {
-      //       address: LP_Token.address, // The address that the token is at.
-      //       symbol: tokenSymbol, // A ticker symbol or shorthand, up to 5 chars.
-      //       decimals: tokenDecimals, // The number of decimals in the token
-      //       image: tokenImage, // A string url of the token logo
-      //     },
-      //   },
-      // });
 
       // if (wasAdded) {
       //   console.log('Thanks for your interest!');
@@ -329,17 +359,28 @@ export default function AddLiquidity() {
       let token0Contract;
       let token1Contract;
 
-      if (token0.address != WrapperAddress && token1.address != WrapperAddress) {
+      if (
+        token0.address != WrapperAddress &&
+        token1.address != WrapperAddress
+      ) {
         token0Contract = new ethers.Contract(token0.address, ERC20, signer);
         token1Contract = new ethers.Contract(token1.address, ERC20, signer);
       }
       if (token0.address === WrapperAddress) {
-        token0Contract = new ethers.Contract(token0.address, NativeWrapper, signer);
+        token0Contract = new ethers.Contract(
+          token0.address,
+          NativeWrapper,
+          signer
+        );
         token1Contract = new ethers.Contract(token1.address, ERC20, signer);
       }
       if (token1.address === WrapperAddress) {
         token0Contract = new ethers.Contract(token0.address, ERC20, signer);
-        token1Contract = new ethers.Contract(token1.address, NativeWrapper, signer);
+        token1Contract = new ethers.Contract(
+          token1.address,
+          NativeWrapper,
+          signer
+        );
       }
 
       const token0Allowance = await token0Contract!.allowance(
@@ -435,19 +476,19 @@ export default function AddLiquidity() {
     }
   };
 
-  const approveForNative = async() => {
+  const approveForNative = async () => {
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     const signerAddress = await signer.getAddress();
-    let caughtError:boolean = false
+    let caughtError: boolean = false;
     if (token0.address === "undefined") {
       const token1Contract = new ethers.Contract(token1.address, ERC20, signer);
       const token1Allowance = await token1Contract!.allowance(
         signerAddress,
         RouterAddress
       );
-        if ( Number(ethers.formatEther(token1Allowance)) < token1Input) {
-          const tx1 = await token1Contract!
+      if (Number(ethers.formatEther(token1Allowance)) < token1Input) {
+        const tx1 = await token1Contract!
           .approve(
             RouterAddress,
             ethers.parseUnits(String(token1Input), "ether")
@@ -456,12 +497,12 @@ export default function AddLiquidity() {
             caughtError = true;
             console.log(error);
           });
-          await provider.waitForTransaction(tx1.hash).finally(() => {
-            if (caughtError === false) {
-              setNeedsApproval(false);
-            }
-          });
-        }
+        await provider.waitForTransaction(tx1.hash).finally(() => {
+          if (caughtError === false) {
+            setNeedsApproval(false);
+          }
+        });
+      }
     }
     if (token1.address === "undefined") {
       const token0Contract = new ethers.Contract(token0.address, ERC20, signer);
@@ -469,26 +510,24 @@ export default function AddLiquidity() {
         signerAddress,
         RouterAddress
       );
-      if (
-        Number(ethers.formatEther(token0Allowance)) < token0Input) {
-          const tx1 = await token0Contract!
-        .approve(
-          RouterAddress,
-          ethers.parseUnits(String(token0Input), "ether")
-        )
-        .then(null, (error) => {
-          caughtError = true;
-          console.log(error);
-        });
+      if (Number(ethers.formatEther(token0Allowance)) < token0Input) {
+        const tx1 = await token0Contract!
+          .approve(
+            RouterAddress,
+            ethers.parseUnits(String(token0Input), "ether")
+          )
+          .then(null, (error) => {
+            caughtError = true;
+            console.log(error);
+          });
         await provider.waitForTransaction(tx1.hash).finally(() => {
           if (caughtError === false) {
             setNeedsApproval(false);
           }
         });
-        }
+      }
     }
-
-  }
+  };
 
   const chooseTokenFunction = async (coin: Coin) => {
     if (token0.address === coin.address || token1.address === coin.address) {
@@ -519,9 +558,9 @@ export default function AddLiquidity() {
         signer
       );
 
-      const tokenIn =  token0 === "undefined" ? WrapperAddress: token0
-      const tokenOut =  token1 === "undefined" ? WrapperAddress: token1
-      
+      const tokenIn = token0 === "undefined" ? WrapperAddress : token0;
+      const tokenOut = token1 === "undefined" ? WrapperAddress : token1;
+
       const pairAddress = await factoryContract.getPair(tokenIn, tokenOut);
       if (pairAddress === "0x0000000000000000000000000000000000000000") {
         setLPTokenExists(false);
@@ -698,13 +737,10 @@ export default function AddLiquidity() {
     }
   };
 
-
- const calcOutAmount = async () => {
-
+  const calcOutAmount = async () => {
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     const signerAddress = await signer.getAddress();
-
 
     const FactoryContract = new ethers.Contract(
       factory_address,
@@ -712,16 +748,15 @@ export default function AddLiquidity() {
       signer
     );
 
-    const tokenIn =  token0.address === "undefined" ? WrapperAddress: token0.address
-    const tokenOut =  token1.address === "undefined" ? WrapperAddress: token1.address
+    const tokenIn =
+      token0.address === "undefined" ? WrapperAddress : token0.address;
+    const tokenOut =
+      token1.address === "undefined" ? WrapperAddress : token1.address;
 
-    const doesLPTokenExist = await FactoryContract.getPair(
-      tokenIn,
-      tokenOut
-    );
-    
-    if(doesLPTokenExist === "0x0000000000000000000000000000000000000000") {
-      return
+    const doesLPTokenExist = await FactoryContract.getPair(tokenIn, tokenOut);
+
+    if (doesLPTokenExist === "0x0000000000000000000000000000000000000000") {
+      return;
     }
     const PairContract = new ethers.Contract(
       await doesLPTokenExist,
@@ -731,20 +766,33 @@ export default function AddLiquidity() {
 
     const res = await PairContract.getReserves();
 
-    const reserve0:bigint = res["reserve0"]
-    const reserve1:bigint = res["reserve1"]
-    
-   
-    const token0InputAmount =  ethers.parseUnits(String(token0Input), "ether")
-    const numerator = token0InputAmount * ethers.toBigInt(1000) * (0 === tokenIn.toLowerCase().localeCompare([tokenIn, tokenOut].sort(compareHex)[0].toLowerCase()) ?  reserve1 : reserve0)
-    const denominator = (0 === tokenIn.toLowerCase().localeCompare([tokenIn, tokenOut].sort(compareHex)[0].toLowerCase()) ? reserve0 : reserve1) * ethers.toBigInt(1000)
+    const reserve0: bigint = res["reserve0"];
+    const reserve1: bigint = res["reserve1"];
 
-    setToken1Input(Number(ethers.formatEther(numerator/ denominator)))
-    const toke1 = document.getElementById('token1Input') as HTMLInputElement;
-    toke1.value = Number(ethers.formatEther(numerator/ denominator)).toFixed(3)
+    const token0InputAmount = ethers.parseUnits(String(token0Input), "ether");
+    const numerator =
+      token0InputAmount *
+      ethers.toBigInt(1000) *
+      (0 ===
+      tokenIn
+        .toLowerCase()
+        .localeCompare([tokenIn, tokenOut].sort(compareHex)[0].toLowerCase())
+        ? reserve1
+        : reserve0);
+    const denominator =
+      (0 ===
+      tokenIn
+        .toLowerCase()
+        .localeCompare([tokenIn, tokenOut].sort(compareHex)[0].toLowerCase())
+        ? reserve0
+        : reserve1) * ethers.toBigInt(1000);
 
- }
-
+    setToken1Input(Number(ethers.formatEther(numerator / denominator)));
+    const toke1 = document.getElementById("token1Input") as HTMLInputElement;
+    toke1.value = Number(ethers.formatEther(numerator / denominator)).toFixed(
+      3
+    );
+  };
 
   const path = usePathname().split("/");
 
@@ -782,11 +830,11 @@ export default function AddLiquidity() {
     }
   }, [isSelected, token0Input, token1Input, token1.address, token0.address]);
 
-  useEffect(()=> {
+  useEffect(() => {
     if (isSelected === true) {
-    calcOutAmount()
+      calcOutAmount();
     }
-  }, [token0Input])
+  }, [token0Input]);
 
   return (
     <>
@@ -883,8 +931,7 @@ export default function AddLiquidity() {
           <span className="question-container">
             <QuestionMarkCircleIcon color="white" width="1vw" height="1vw" />
             <div className="tooltip">
-              Be careful when adding uneven amounts of liquidity due to
-              impermanent loss
+              You will not be able to add uneven amounts of liquidity.
             </div>
           </span>
         </div>
@@ -1000,7 +1047,7 @@ export default function AddLiquidity() {
                   {token0.symbol} per {token1.symbol}
                 </p>
               </span>
-              <span key={reserve0}  className="flex flex-col items-center w-1/3">
+              <span key={reserve0} className="flex flex-col items-center w-1/3">
                 <p>
                   {Number.isNaN(reserve1 / reserve0)
                     ? 0
@@ -1032,11 +1079,14 @@ export default function AddLiquidity() {
         ) : needsApproval === true ? (
           <button
             onClick={() => {
-              if(token0.address === "undefined" || token1.address === "undefined") {
-                approveForNative()
+              if (
+                token0.address === "undefined" ||
+                token1.address === "undefined"
+              ) {
+                approveForNative();
                 return;
               }
-              approveTokens() 
+              approveTokens();
             }}
             className="mt-[2vh] mx-[3%] rounded-xl bg-[#00DAAC30] py-[2vh] mb-[2vh] font-medium text-[#00DAAC]"
           >

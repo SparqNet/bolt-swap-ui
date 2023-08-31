@@ -249,7 +249,7 @@ export default function RootLayout({
                   Connection === false ? (
                   <button
                     onClick={() => connectWallet()}
-                    className="rounded-lg bg-[#00DAAC40] h-[4vh] px-3 py-2 text-[#00DAAC] font-bold"
+                    className="rounded-lg bg-[#00DAAC40] flex justify-center items-center min-h-[2.5rem] h-[4vh] px-3 py-2 text-[#00DAAC] font-bold"
                   >
                     Connect Wallet
                   </button>
@@ -257,13 +257,13 @@ export default function RootLayout({
                   <>
                     <Link
                       href={"/swap/wrap"}
-                      className="rounded-lg bg-white h-[4vh] px-3 py-2 font-bold"
+                      className="rounded-lg bg-white flex justify-center items-center min-h-[2.5rem] h-[4vh] px-3 py-2 font-bold"
                     >
                       Get WSPARQ &nbsp;🔄
                     </Link>
                     <span
                       onClick={() => setFaucetOpened(!faucetOpened)}
-                      className="rounded-lg bg-[#00DAAC40] h-[4vh] px-3 py-2 text-[#00DAAC] font-bold"
+                      className="rounded-lg bg-[#00DAAC40]  flex justify-center items-center min-h-[2.5rem] h-[4vh] px-3 py-2 text-[#00DAAC] font-bold"
                     >
                       <EyeDropperIcon
                         className="transition duration-[1000] hover:rotate-[720deg]"
@@ -298,16 +298,16 @@ export default function RootLayout({
                         </span>
                       </div>
                     </span>{" "}
-                    <p className="rounded-lg bg-[#00DAAC40] h-[4vh] px-3 py-2 text-[#00DAAC] font-bold">
+                    <p className="rounded-lg bg-[#00DAAC40] flex justify-center items-center min-h-[2.5rem] h-[4vh] px-3 py-2 text-[#00DAAC] font-bold">
                       {network}
                     </p>
-                    <p className="rounded-lg bg-[#00DAAC40] h-[4vh] px-3 py-2 text-[#00DAAC] font-bold">
+                    <p className="rounded-lg bg-[#00DAAC40] flex justify-center items-center min-h-[2.5rem] h-[4vh] px-3 py-2 text-[#00DAAC] font-bold">
                       {" "}
                       {Number(wallet?.nativeBalance).toFixed(2)} SPARQ
                     </p>
                     <button
                       onClick={() => copyToClipboard(wallet.address)}
-                      className="rounded-lg bg-[#00DAAC40] h-[4vh] px-3 py-2 text-[#00DAAC] font-bold"
+                      className="rounded-lg bg-[#00DAAC40] flex justify-center items-center min-h-[2.5rem] h-[4vh] px-3 py-2 text-[#00DAAC] font-bold"
                     >
                       <span className="flex flex-row items-center">
                         <WalletIcon height={"2vh"} />{" "}
@@ -320,7 +320,7 @@ export default function RootLayout({
                     </button>
                     <span
                       onClick={() => setSettingsOpened(!settingsOpened)}
-                      className="rounded-lg bg-[#00DAAC40] h-[4vh] px-3 py-2 text-[#00DAAC] font-bold"
+                      className="rounded-lg bg-[#00DAAC40] flex justify-center items-center min-h-[2.5rem] h-[4vh] px-3 py-2 text-[#00DAAC] font-bold"
                     >
                       <Cog8ToothIcon
                         className="transition duration-[1000] hover:rotate-[720deg]"
