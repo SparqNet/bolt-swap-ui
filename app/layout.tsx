@@ -122,8 +122,10 @@ export default function RootLayout({
       try {
         await window.ethereum.request({
           method: "wallet_switchEthereumChain",
-          params: [{ chainId: "0xC4C4C0" }],
+          params: [{ chainId: "0xC5490" }],
         });
+        setNetwork("Orbiter");
+        updateNetwork("Orbiter");
       } catch (switchError: any) {
         if (switchError.code === 4902) {
           setNetwork("Wrong Network");
