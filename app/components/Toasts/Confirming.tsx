@@ -13,6 +13,12 @@ export const ConfirmingToast = ({
 }) => {
   const listenForTxn = async () => {
     const provider = new ethers.BrowserProvider(window.ethereum);
+    console.log("listening for txn")
+    console.log("hash: ", hash)
+    if (!hash) { 
+      closeToast("")
+      return
+    }
     const mined = await provider.waitForTransaction(hash);
     console.log(mined)
     closeToast("")
