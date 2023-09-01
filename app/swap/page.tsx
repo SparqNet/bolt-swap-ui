@@ -80,6 +80,7 @@ export default function Swap() {
   const [impact, setImpact] = useState(0);
   const [reserve0, setReserve0] = useState(0);
   const [reserve1, setReserve1] = useState(0);
+  const [noLiq, setNoLiq] = useState(false);
   const [toastTxnHash, setToastTxnHash] = useState("");
   const [showToast, setShowToast] = useState("");
 
@@ -100,7 +101,7 @@ export default function Swap() {
     {
       name: "Sparq",
       symbol: "SPRQ",
-      address: "",
+      address: "undefined",
       image: "/logo.svg",
     } as Coin,
   ]);
@@ -213,6 +214,11 @@ export default function Swap() {
       token1.address === "undefined" ? WrapperAddress : token1.address;
 
     const doesLPTokenExist = await FactoryContract.getPair(tokenIn, tokenOut);
+    if (doesLPTokenExist === "0x0000000000000000000000000000000000000000") {
+      setNoLiq(true);
+      return;
+    }
+    setNoLiq(false);
     const PairContract = new ethers.Contract(
       await doesLPTokenExist,
       PairAbi,
@@ -342,17 +348,16 @@ export default function Swap() {
           reset2.value = String(0);
           await checkApprovalNative();
           await getBalance();
-          // wasAdded is a boolean. Like any RPC method, an error may be thrown.
           async () => {
             await window.ethereum.request({
               method: "wallet_watchAsset",
               params: {
-                type: "ERC20", // Initially only supports ERC20, but eventually more!
+                type: "ERC20",
                 options: {
-                  address: token1.address, // The address that the token is at.
-                  symbol: token1.symbol, // A ticker symbol or shorthand, up to 5 chars.
-                  decimals: 18, // The number of decimals in the token
-                  image: token1.image, // A string url of the token logo
+                  address: token1.address,
+                  symbol: token1.symbol,
+                  decimals: 18,
+                  image: token1.image,
                 },
               },
             });
@@ -577,6 +582,12 @@ export default function Swap() {
       return;
     }
 
+    if (
+      (token0.address === WrapperAddress && coin.address === "undefined") ||
+      (token1.address === WrapperAddress && coin.address === "undefined")
+    ) {
+      return;
+    }
     if (isOpen.tokenNum === 0) {
       setToken0(coin);
       setIsOpen({ show: false, tokenNum: 0 });
@@ -595,11 +606,6 @@ export default function Swap() {
       const signer = await provider.getSigner();
       const signerAddress = await signer.getAddress();
 
-      const tokenIn =
-        token0.address === "undefined" ? WrapperAddress : token0.address;
-      const tokenOut =
-        token1.address === "undefined" ? WrapperAddress : token1.address;
-
       if (isOpen.tokenNum === 0) {
         if (token0.address === "undefined") {
           await provider.getBalance(signerAddress).then(
@@ -609,11 +615,16 @@ export default function Swap() {
           return;
         }
 
-        const token0Contract = new ethers.Contract(tokenIn, ERC20, signer);
+        const token0Contract = new ethers.Contract(
+          token0.address,
+          ERC20,
+          signer
+        );
         const balance = await token0Contract
           .balanceOf(signerAddress)
           .then(null, (error) => console.log(error));
         setToken0Balance(Number(ethers.formatEther(balance)));
+        return;
       }
 
       if (isOpen.tokenNum === 1) {
@@ -625,11 +636,16 @@ export default function Swap() {
           return;
         }
 
-        const token1Contract = new ethers.Contract(tokenOut, ERC20, signer);
+        const token1Contract = new ethers.Contract(
+          token1.address,
+          ERC20,
+          signer
+        );
         const balance = await token1Contract
           .balanceOf(signerAddress)
           .then(null, (error) => console.log(error));
-        setToken0Balance(Number(ethers.formatEther(balance)));
+        setToken1Balance(Number(ethers.formatEther(balance)));
+        return;
       }
 
       if (isSelected) {
@@ -641,45 +657,69 @@ export default function Swap() {
         let token0Contract;
         let token1Contract;
         if (token1.address === "undefined") {
+          await provider.getBalance(signerAddress).then(
+            (ret) => setToken1Balance(Number(ethers.formatEther(ret))),
+            (error) => console.log(error)
+          );
           token1Contract = new ethers.Contract(WrapperAddress, ERC20, signer);
         } else {
           token1Contract = new ethers.Contract(token1.address, ERC20, signer);
+          const balance1 = await token1Contract
+            .balanceOf(signerAddress)
+            .then(null, (error) => console.log(error));
+          setToken1Balance(Number(ethers.formatEther(balance1)));
         }
         if (token0.address === "undefined") {
+          await provider.getBalance(signerAddress).then(
+            (ret) => setToken0Balance(Number(ethers.formatEther(ret))),
+            (error) => console.log(error)
+          );
           token0Contract = new ethers.Contract(WrapperAddress, ERC20, signer);
         } else {
           token0Contract = new ethers.Contract(token0.address, ERC20, signer);
+          const balance0 = await token0Contract
+            .balanceOf(signerAddress)
+            .then(null, (error) => console.log(error));
+          setToken0Balance(Number(ethers.formatEther(balance0)));
         }
-        const balance0 = await token0Contract
-          .balanceOf(signerAddress)
-          .then(null, (error) => console.log(error));
-        setToken0Balance(Number(ethers.formatEther(balance0)));
-
-        const balance1 = await token1Contract
-          .balanceOf(signerAddress)
-          .then(null, (error) => console.log(error));
-        setToken1Balance(Number(ethers.formatEther(balance1)));
 
         const tokenIn =
           token0.address === "undefined" ? WrapperAddress : token0.address;
         const tokenOut =
           token1.address === "undefined" ? WrapperAddress : token1.address;
-
-        const pairAddress = await factoryContract.getPair(tokenIn, tokenOut);
-        console.log(pairAddress);
-
-        const pairContract = new ethers.Contract(pairAddress, PairAbi, signer);
-
-        const reserves: any = await pairContract
-          .getReserves()
-          .then(null, (error) => console.log(error));
-        console.log(reserves);
-        setReserve0(Number(ethers.formatEther(reserves[0])));
-        setReserve1(Number(ethers.formatEther(reserves[1])));
+        try {
+          const pairAddress = await factoryContract.getPair(tokenIn, tokenOut);
+          if (pairAddress != "0x0000000000000000000000000000000000000000") {
+            const pairContract = new ethers.Contract(
+              pairAddress,
+              PairAbi,
+              signer
+            );
+            const reserves: any = await pairContract
+              .getReserves()
+              .then(null, (error) => console.log(error));
+            setReserve0(Number(ethers.formatEther(reserves[0])));
+            setReserve1(Number(ethers.formatEther(reserves[1])));
+            return;
+          }
+        } catch (error) {
+          console.log(error);
+        }
       }
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const getNativeBalance = async () => {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const signerAddress = await signer.getAddress();
+
+    await provider.getBalance(signerAddress).then(
+      (ret) => setToken0Balance(Number(ethers.formatEther(ret))),
+      (error) => console.log(error)
+    );
   };
 
   useEffect(() => {
@@ -697,10 +737,16 @@ export default function Swap() {
   }, [token0.address, token1.address]);
 
   useEffect(() => {
+    if (token0.address === "undefined") {
+      getNativeBalance();
+    }
+  }, []);
+
+  useEffect(() => {
     if (isSelected === true) {
       calcOutAmount();
     }
-  }, [token0Input]);
+  }, [token0.address, token1.address, token0Input, token1Input]);
   return (
     <>
       <ConfirmingToast
@@ -746,11 +792,11 @@ export default function Swap() {
                     <MagnifyingGlassIcon className="w-5 text-white absolute mt-[13px] ml-[14px] text-grey" />
                     <input
                       className="border border-grey2 outline-none py-2.5 pl-12 rounded-lg w-full placeholder:text-grey placeholder:font-regular text-white"
-                      placeholder="Search name or paste address"
+                      placeholder="Search address"
                       value={inputVal}
                       onChange={(e) => setInputVal(e.target.value)}
                     ></input>
-                    <div className="flex justify-between flex-wrap mt-4 gap-y-2 pb-6 border-b">
+                    <div className="cursor-pointer flex justify-between flex-wrap mt-4 gap-y-2 pb-6 border-b">
                       {coinsForListing?.map((coin: Coin, index: number) => {
                         return (
                           <CoinListButton
@@ -762,7 +808,7 @@ export default function Swap() {
                       })}
                     </div>
                   </div>
-                  <div className="mb-4 h-[25vh] overflow-y-scroll">
+                  <div className="cursor-pointer mb-4 h-[25vh] overflow-y-scroll">
                     {coinsForListing?.map((coin: Coin, index: number) => {
                       return (
                         <CoinListItem
@@ -828,16 +874,16 @@ export default function Swap() {
           className="mx-auto text-white text-xl my-[1vh] p-2 border border-[1px] border-[#86C7DB25] bg-[#00DAAC30] rounded-lg cursor-pointer box-border"
           onClick={async () => {
             if (isSelected) {
-              const temp = token0;
-
-              setToken0(token1);
+              let temp = token0;
+              let temp1 = token1;
               setToken1(temp);
+              setToken0(temp1);
+              console.log(token0Balance);
               if (direction === "down") {
                 setDirection("up");
               } else {
                 setDirection("down");
               }
-              await getBalance();
             }
           }}
         >
@@ -860,7 +906,7 @@ export default function Swap() {
                 ? "(estimated)"
                 : ""}
             </span>
-            <span className="select-none">
+            <span key={token1.address} className="select-none">
               {" "}
               {isSelected === true
                 ? `Balance:${token1Balance.toFixed(2)}`
@@ -954,6 +1000,19 @@ export default function Swap() {
           <button className="mt-[2vh] mx-[3%] rounded-xl bg-[#888D9B] py-[2vh] mb-[2vh] font-medium text-lg text-[#3E4148]">
             {" "}
             Invalid pair
+          </button>
+        ) : noLiq === true ? (
+          <button
+            disabled
+            className="mt-[2vh] mx-[3%] rounded-xl bg-red-900 py-[2vh] mb-[2vh] font-medium text-lg text-red-200 cursor-not-allowed"
+          >
+            {" "}
+            No Liquidity
+          </button>
+        ) : token0Input > token0Balance || token1Input > token1Balance ? (
+          <button className="mt-[2vh] mx-[3%] rounded-xl bg-red-900 py-[2vh] mb-[2vh] font-medium text-lg text-red-200 cursor-not-allowed">
+            {" "}
+            Insufficient Balance
           </button>
         ) : token0Input === 0 || token1Input === 0 ? (
           <button className="mt-[2vh] mx-[3%] rounded-xl bg-[#888D9B] py-[2vh] mb-[2vh] font-medium text-lg text-[#3E4148]">

@@ -56,17 +56,17 @@ export default function ImportLiquidity() {
       image: "/silver.png",
     } as Coin,
     {
-      name:"Sparq",
+      name: "Sparq",
       symbol: "SPRQ",
       address: "",
-      image: "/logo.svg"
+      image: "/logo.svg",
     } as Coin,
     {
-      name:"Wrapped Sparq",
+      name: "Wrapped Sparq",
       symbol: "WSPRQ",
       address: WrapperAddress,
-      image: "/logo.svg"
-    } as Coin
+      image: "/logo.svg",
+    } as Coin,
   ]);
   const [inputVal, setInputVal] = useState("");
   const [isOpen, setIsOpen] = useState({ show: false, tokenNum: -1 });
@@ -97,16 +97,13 @@ export default function ImportLiquidity() {
       const signer = await provider.getSigner();
       const signerAddress = await signer.getAddress();
 
-      const contract = new ethers.Contract(
-        factory_address,
-        FactoryAbi,
-        signer
-      );
-      const wrapperSlot = token0.address === "" ? WrapperAddress: token0.address
-      const tokenSlot = token1.address === "" ? WrapperAddress: token1.address
+      const contract = new ethers.Contract(factory_address, FactoryAbi, signer);
+      const wrapperSlot =
+        token0.address === "" ? WrapperAddress : token0.address;
+      const tokenSlot = token1.address === "" ? WrapperAddress : token1.address;
 
       const pair = await contract.getPair(wrapperSlot, tokenSlot);
-       console.log(pair)
+      console.log(pair);
       const tokenContract = new ethers.Contract(pair, PairAbi, signer);
 
       const supply = Number(
@@ -125,43 +122,35 @@ export default function ImportLiquidity() {
         token1: Number(ethers.formatEther(reserves[1])) * shareOfPool,
       });
 
-
       if (localStorage.getItem("addedLPTokens") !== null) {
-        const prevEntry = localStorage.getItem("addedLPTokens")
-        const prevObject = JSON.parse(prevEntry!)
+        const prevEntry = localStorage.getItem("addedLPTokens");
+        const prevObject = JSON.parse(prevEntry!);
         for (let i = 0; i < Object.keys(prevObject).length; i++) {
           if (prevObject[i] === pair) {
             return;
           }
         }
-        const nextIndex = Object.keys(prevObject).length
-        prevObject[nextIndex] = pair
-        const updated = JSON.stringify(prevObject)
-        localStorage.setItem("addedLPTokens", updated)
+        const nextIndex = Object.keys(prevObject).length;
+        prevObject[nextIndex] = pair;
+        const updated = JSON.stringify(prevObject);
+        localStorage.setItem("addedLPTokens", updated);
       }
-    
+
       if (localStorage.getItem("addedLPTokens") === null) {
-      const addedLPTokens = JSON.stringify({0:pair})
-      localStorage.setItem("addedLPTokens", addedLPTokens)
+        const addedLPTokens = JSON.stringify({ 0: pair });
+        localStorage.setItem("addedLPTokens", addedLPTokens);
       }
-
-
     } catch (error) {
       console.log(error);
     }
-
-  }
+  };
   const getBalance = async () => {
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const signerAddress = await signer.getAddress();
 
-      const contract = new ethers.Contract(
-        factory_address,
-        FactoryAbi,
-        signer
-      );
+      const contract = new ethers.Contract(factory_address, FactoryAbi, signer);
       const pair = await contract.getPair(token0.address, token1.address);
       const tokenContract = new ethers.Contract(pair, PairAbi, signer);
 
@@ -181,27 +170,24 @@ export default function ImportLiquidity() {
         token1: Number(ethers.formatEther(reserves[1])) * shareOfPool,
       });
 
-
       if (localStorage.getItem("addedLPTokens") !== null) {
-        const prevEntry = localStorage.getItem("addedLPTokens")
-        const prevObject = JSON.parse(prevEntry!)
+        const prevEntry = localStorage.getItem("addedLPTokens");
+        const prevObject = JSON.parse(prevEntry!);
         for (let i = 0; i < Object.keys(prevObject).length; i++) {
           if (prevObject[i] === pair) {
             return;
           }
         }
-        const nextIndex = Object.keys(prevObject).length
-        prevObject[nextIndex] = pair
-        const updated = JSON.stringify(prevObject)
-        localStorage.setItem("addedLPTokens", updated)
-      }
-    
-      if (localStorage.getItem("addedLPTokens") === null) {
-      const addedLPTokens = JSON.stringify({0:pair})
-      localStorage.setItem("addedLPTokens", addedLPTokens)
+        const nextIndex = Object.keys(prevObject).length;
+        prevObject[nextIndex] = pair;
+        const updated = JSON.stringify(prevObject);
+        localStorage.setItem("addedLPTokens", updated);
       }
 
-    
+      if (localStorage.getItem("addedLPTokens") === null) {
+        const addedLPTokens = JSON.stringify({ 0: pair });
+        localStorage.setItem("addedLPTokens", addedLPTokens);
+      }
     } catch (error) {
       console.log(error);
     }
@@ -255,12 +241,12 @@ export default function ImportLiquidity() {
                     </div>
                     <MagnifyingGlassIcon className="w-5 text-white absolute mt-[13px] ml-[14px] text-grey" />
                     <input
-                      className="border border-grey2 outline-none py-2.5 pl-12 rounded-lg w-full placeholder:text-grey placeholder:font-regular text-white"
-                      placeholder="Search name or paste address"
+                      className="cursor-pointer border border-grey2 outline-none py-2.5 pl-12 rounded-lg w-full placeholder:text-grey placeholder:font-regular text-white"
+                      placeholder="Search address"
                       value={inputVal}
                       onChange={(e) => setInputVal(e.target.value)}
                     ></input>
-                    <div className="flex justify-between flex-wrap mt-4 gap-y-2 pb-6 border-b">
+                    <div className="cursor-pointer flex justify-between flex-wrap mt-4 gap-y-2 pb-6 border-b">
                       {coinsForListing?.map((coin: Coin, index: number) => {
                         return (
                           <CoinListButton
@@ -272,7 +258,7 @@ export default function ImportLiquidity() {
                       })}
                     </div>
                   </div>
-                  <div className="mb-4 h-[25vh] overflow-y-scroll">
+                  <div className="cursor-pointer mb-4 h-[25vh] overflow-y-scroll">
                     {coinsForListing?.map((coin: Coin, index: number) => {
                       return (
                         <CoinListItem
@@ -378,10 +364,13 @@ export default function ImportLiquidity() {
               </span>
             </span>
           </>
-        ) :      <div className="flex border-[#00DAAC90] border-[1px] md:min-h-[5vh] mt-[2vh] rounded-lg mx-[3%] mb-[2vh]">
-        <span className="text-[#00DAAC] mx-auto place-self-center">No liquidity found.</span>
-        </div>
-        }
+        ) : (
+          <div className="flex border-[#00DAAC90] border-[1px] md:min-h-[5vh] mt-[2vh] rounded-lg mx-[3%] mb-[2vh]">
+            <span className="text-[#00DAAC] mx-auto place-self-center">
+              No liquidity found.
+            </span>
+          </div>
+        )}
 
         {!isSelected ? (
           <span className="flex flex-row justify-center mx-[3%] rounded-xl bg-[#888D9B] py-[2vh] mb-[2vh] font-medium text-[#3E4148]">
